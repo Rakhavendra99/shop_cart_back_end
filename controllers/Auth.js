@@ -12,6 +12,7 @@ export const Login = async (req, res) => {
     if (!user) return res.status(404).json({ msg: "This Email is Not Registered." });
     const match = await argon2.verify(user.password, req.body.password);
     if (!match) return res.status(400).json({ msg: "Wrong Password" });
+    req.session.userId = user.id;
     const id = user.id;
     const name = user.name;
     const email = user.email;
@@ -30,7 +31,7 @@ export const Me = async (req, res) => {
         }
     });
     if (!user) return res.status(404).json({ msg: "User Not found" });
-    res.status(200).json("user");
+    res.status(200).json(user);
 }
 
 export const logOut = (req, res) => {
