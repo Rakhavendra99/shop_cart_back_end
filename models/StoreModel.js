@@ -4,20 +4,13 @@ import Users from "./UserModel.js";
 
 const { DataTypes } = Sequelize;
 
-const Products = db.define('product', {
+const Stores = db.define('store', {
     id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
         allowNull: false,
         unique: false,
         autoIncrement: true,
-        validate: {
-            notEmpty: true
-        }
-    },
-    categoryId: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
         validate: {
             notEmpty: true
         }
@@ -30,43 +23,29 @@ const Products = db.define('product', {
             len: [3, 100]
         }
     },
-    price: {
-        type: DataTypes.INTEGER,
+    address: {
+        type: DataTypes.String,
         allowNull: false,
         validate: {
             notEmpty: true
         }
     },
-    storeId: {
-        type: DataTypes.INTEGER,
+    openTime: {
+        type: DataTypes.TIME,
         allowNull: false,
         validate: {
             notEmpty: true
         }
     },
-    gst: {
-        type: DataTypes.DOUBLE,
+    closeTime: {
+        type: DataTypes.TIME,
         allowNull: false,
         validate: {
             notEmpty: true
         }
     },
     image: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        validate: {
-            notEmpty: true
-        }
-    },
-    availableQuantity: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        validate: {
-            notEmpty: true
-        }
-    },
-    description: {
-        type: DataTypes.STRING,
+        type: DataTypes.TEXT,
         allowNull: false,
         validate: {
             notEmpty: true
@@ -79,11 +58,16 @@ const Products = db.define('product', {
             notEmpty: true
         }
     },
+    email: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        validate: {
+            notEmpty: true
+        }
+    },
 }, {
     freezeTableName: true
 });
 
-Users.hasMany(Products);
-Products.belongsTo(Users, { foreignKey: 'userId' });
 
-export default Products;
+export default Stores;

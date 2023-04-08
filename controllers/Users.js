@@ -4,7 +4,7 @@ import argon2 from "argon2";
 export const getUsers = async (req, res) => {
     try {
         const response = await User.findAll({
-            attributes: ['uuid', 'name', 'email', 'role']
+            attributes: ['id', 'name', 'email', 'role']
         });
         res.status(200).json(response);
     } catch (error) {
@@ -15,9 +15,9 @@ export const getUsers = async (req, res) => {
 export const getUserById = async (req, res) => {
     try {
         const response = await User.findOne({
-            attributes: ['uuid', 'name', 'email', 'role'],
+            attributes: ['id', 'name', 'email', 'role'],
             where: {
-                uuid: req.params.id
+                id: req.params.id
             }
         });
         res.status(200).json(response);
@@ -39,7 +39,6 @@ export const createUser = async (req, res) => {
         if (findUser) {
             return res.status(403).json({ msg: "This Email already taken, can you try other email Id." });
         }
-        console.log(req.body)
         let createUsers = await User.create({
             name: name,
             email: email,
@@ -55,7 +54,7 @@ export const createUser = async (req, res) => {
 export const updateUser = async (req, res) => {
     const user = await User.findOne({
         where: {
-            uuid: req.params.id
+            id: req.params.id
         }
     });
     if (!user) return res.status(403).json({ msg: "User id not found" });
@@ -87,7 +86,7 @@ export const updateUser = async (req, res) => {
 export const deleteUser = async (req, res) => {
     const user = await User.findOne({
         where: {
-            uuid: req.params.id
+            id: req.params.id
         }
     });
     if (!user) return res.status(403).json({ msg: "User id not found" });

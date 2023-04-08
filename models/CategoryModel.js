@@ -1,9 +1,10 @@
 import { Sequelize } from "sequelize";
 import db from "../config/Database.js";
+import Users from "./UserModel.js";
 
-const {DataTypes} = Sequelize;
+const { DataTypes } = Sequelize;
 
-const Users = db.define('users',{
+const Category = db.define('category', {
     id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
@@ -14,38 +15,31 @@ const Users = db.define('users',{
             notEmpty: true
         }
     },
-    name:{
+    name: {
         type: DataTypes.STRING,
         allowNull: false,
-        validate:{
+        validate: {
             notEmpty: true,
             len: [3, 100]
         }
     },
-    email:{
-        type: DataTypes.STRING,
+    storeId: {
+        type: DataTypes.INTEGER,
         allowNull: false,
-        validate:{
-            notEmpty: true,
-            isEmail: true
-        }
-    },
-    password:{
-        type: DataTypes.STRING,
-        allowNull: false,
-        validate:{
+        validate: {
             notEmpty: true
         }
     },
-    role:{
-        type: DataTypes.STRING,
+    isActive: {
+        type: DataTypes.TINYINT,
         allowNull: false,
-        validate:{
+        validate: {
             notEmpty: true
         }
     }
-},{
+}, {
     freezeTableName: true
 });
 
-export default Users;
+
+export default Category;
