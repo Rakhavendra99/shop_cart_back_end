@@ -23,7 +23,7 @@ const store = new sessionStore({
 // })();
 
 app.use(session({
-    secret: "123",
+    secret: "123456789",
     resave: false,
     saveUninitialized: true,
     store: store,
