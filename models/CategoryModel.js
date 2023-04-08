@@ -23,6 +23,13 @@ const Category = db.define('category', {
             len: [3, 100]
         }
     },
+    image: {
+        type: DataTypes.TEXT,
+        allowNull: false,
+        validate: {
+            notEmpty: true
+        }
+    },
     storeId: {
         type: DataTypes.INTEGER,
         allowNull: false,

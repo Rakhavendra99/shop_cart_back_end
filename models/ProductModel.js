@@ -52,7 +52,7 @@ const Products = db.define('product', {
         }
     },
     image: {
-        type: DataTypes.STRING,
+        type: DataTypes.TEXT,
         allowNull: false,
         validate: {
             notEmpty: true

@@ -2,14 +2,12 @@ import Category from "../models/CategoryModel.js";
 import Product from "../models/ProductModel.js";
 import User from "../models/UserModel.js";
 import { Op } from "sequelize";
+import { getParamsParser, getRequestParser, postRequestParser } from "../util/index.js";
 
 export const getCategorys = async (req, res) => {
     try {
         let response = await Category.findAll({
-            attributes: ['id', 'name', 'userId', 'storeId'],
-            where: {
-                userId: req.userId
-            }
+            attributes: ['id', 'name', 'isActive', 'storeId', "image"],
         });
         res.status(200).json(response);
     } catch (error) {
@@ -18,125 +16,76 @@ export const getCategorys = async (req, res) => {
 }
 
 export const getCategoryById = async (req, res) => {
+    const data = getParamsParser(req)
     try {
-        const product = await Product.findOne({
+        const category = await Category.findOne({
             where: {
-                id: req.params.id
+                id: data.id
             }
         });
-        if (!product) return res.status(403).json({ msg: "Product id not found" });
-        let response;
-        if (req.role === "admin") {
-            response = await Product.findOne({
-                attributes: ['id', 'name', 'price'],
-                where: {
-                    id: product.id
-                },
-                include: [{
-                    model: User,
-                    attributes: ['name', 'email']
-                }]
-            });
-        } else {
-            response = await Product.findOne({
-                attributes: ['id', 'name', 'price'],
-                where: {
-                    [Op.and]: [{ id: product.id }, { userId: req.userId }]
-                },
-                include: [{
-                    model: User,
-                    attributes: ['name', 'email']
-                }]
-            });
-        }
-        res.status(200).json(response);
+        if (!category) return res.status(403).json({ msg: "Category Id not found" });
+        res.status(200).json(category);
     } catch (error) {
         res.status(500).json({ msg: error.message });
     }
 }
 
 export const createCategory = async (req, res) => {
-    const { name, price } = req.body;
+    const data = postRequestParser(req)
     try {
-        let findProduct = await Product.findOne({
+        let findCategory = await Category.findOne({
             where: {
-                name: name
+                name: data.name
             }
         })
-        if (findProduct) {
-            return res.status(403).json({ msg: "Product Name Already taken" });
+        if (findCategory) {
+            return res.status(403).json({ msg: "Category Name Already taken" });
         }
-        let product = await Product.create({
-            name: name,
-            price: price,
-            userId: req.userId
-        });
-        return res.status(201).json({ msg: product });
+        data.isActive = 1
+        data.storeId = 1
+        let category = await Category.create(Object.assign({}, data));
+        return res.status(201).json({ msg: category });
     } catch (error) {
         res.status(500).json({ msg: error.message });
     }
 }
 
 export const updateCategory = async (req, res) => {
+    const params = getParamsParser(req)
+    const data = postRequestParser(req)
     try {
-        const product = await Product.findOne({
+        const category = await Category.findOne({
             where: {
-                id: req.params.id
+                id: params.id
             }
         });
-        if (!product) return res.status(403).json({ msg: "Product not found" });
-        const { name, price } = req.body;
-        // const findProduct = await Product.findOne({
-        //     where:{
-        //         name: name
-        //     }
-        // })
-        // if(findProduct) return res.status(403).json({msg: "Product Name Already taken"})
-        if (req.role === "admin") {
-            await Product.update({ name, price }, {
-                where: {
-                    id: product.id
-                }
-            });
-        } else {
-            if (req.userId !== product.userId) return res.status(403).json({ msg: "Request Unauthorized" });
-            await Product.update({ name, price }, {
-                where: {
-                    [Op.and]: [{ id: product.id }, { userId: req.userId }]
-                }
-            });
-        }
-        res.status(200).json({ msg: product });
+        if (!category) return res.status(403).json({ msg: "Cagtegory Id Not found" });
+        await category.update(Object.assign({}, data));
+        res.status(200).json({ msg: category });
     } catch (error) {
         res.status(500).json({ msg: error.message });
     }
 }
 
 export const deleteCategory = async (req, res) => {
+    const data = getParamsParser(req)
     try {
-        const product = await Product.findOne({
+        const category = await Category.findOne({
             where: {
-                id: req.params.id
+                id: data.id
             }
         });
-        if (!product) return res.status(403).json({ msg: "Produt id not found" });
-        const { name, price } = req.body;
-        let deleteProduct
-        if (req.role === "admin") {
-            deleteProduct = await Product.destroy({
-                where: {
-                    id: product.id
-                }
-            });
-        } else {
-            if (req.userId !== product.userId) return res.status(403).json({ msg: "Request Unauthorized" });
-            deleteProduct = await Product.destroy({
-                where: {
-                    [Op.and]: [{ id: product.id }, { userId: req.userId }]
-                }
-            });
+        if (!category) return res.status(403).json({ msg: "Category Id not found" });
+        let findProduct = await Product.findOne({
+            where: {
+                categoryId: data.id,
+            }
+        })
+        if(findProduct){
+            return res.status(403).json({ msg: "There is one valid product in this category. So you can't delete it." });
         }
-        res.status(200).json({ msg: deleteProduct });
+        category.destroy(Object.assign({}, data))
+        res.status(200).json({ msg: category });
     } catch (error) {
         res.status(500).json({ msg: error.message });
     }
