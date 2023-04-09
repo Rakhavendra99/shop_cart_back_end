@@ -66,7 +66,7 @@ const Products = db.define('product', {
         }
     },
     description: {
-        type: DataTypes.STRING,
+        type: DataTypes.TEXT,
         allowNull: false,
         validate: {
             notEmpty: true
