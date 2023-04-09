@@ -4,7 +4,9 @@ import {
     getUserById,
     createUser,
     updateUser,
-    deleteUser
+    deleteUser,
+    AdmingetDasboard,
+    VendorgetDasboard
 } from "../controllers/Users.js";
 import { verifyUser, adminOnly } from "../middleware/AuthUser.js";
 
@@ -15,5 +17,8 @@ router.get('/users/:id', verifyUser, adminOnly, getUserById);
 router.post('/users', createUser);
 router.patch('/users/:id', verifyUser, adminOnly, updateUser);
 router.delete('/users/:id', verifyUser, adminOnly, deleteUser);
+
+router.get('/vendor/dashboard', verifyUser, VendorgetDasboard);
+router.get('/admin/dashboard', verifyUser, adminOnly, AdmingetDasboard);
 
 export default router;

@@ -1,3 +1,6 @@
+import Category from "../models/CategoryModel.js";
+import Products from "../models/ProductModel.js";
+import Users from "../models/UserModel.js";
 import User from "../models/UserModel.js";
 import argon2 from "argon2";
 
@@ -96,7 +99,73 @@ export const deleteUser = async (req, res) => {
                 id: user.id
             }
         });
-        res.status(200).json({ msg: deleteUser });
+        res.status(200).json({ deleteUser });
+    } catch (error) {
+        res.status(400).json({ msg: error.message });
+    }
+}
+
+export const VendorgetDasboard = async (req, res) => {
+    const user = await User.findOne({
+        where: {
+            id: req.session.userId
+        }
+    });
+    if (!user) return res.status(403).json({ msg: "User id not found" });
+    try {
+        let productCount = await Products.findAll({
+            where: {
+                storeId: 1
+            },
+            attributes: ['id']
+        });
+        let categoryCount = await Category.findAll({
+            where: {
+                storeId: 1
+            },
+            attributes: ['id']
+        })
+        let result = {}
+        result['productCount'] = productCount.length
+        result['categoryCount'] = categoryCount.length
+        res.status(200).json(result);
+    } catch (error) {
+        res.status(400).json({ msg: error.message });
+    }
+}
+
+export const AdmingetDasboard = async (req, res) => {
+    const user = await User.findOne({
+        where: {
+            id: req.session.userId
+        }
+    });
+    if (!user) return res.status(403).json({ msg: "User id not found" });
+    try {
+        let productCount = await Products.findAll({
+            attributes: ['id']
+        });
+        let categoryCount = await Category.findAll({
+            attributes: ['id']
+        })
+        let vendorCount = await Users.findAll({
+            where:{
+                role: "vendor"
+            },
+            attributes: ['id']
+        })
+        let customerCount = await Users.findAll({
+            where:{
+                role: "user"
+            },
+            attributes: ['id']
+        })
+        let result = {}
+        result['productCount'] = productCount.length
+        result['categoryCount'] = categoryCount.length
+        result['vendorCount'] = vendorCount.length
+        result['customerCount'] = customerCount.length
+        res.status(200).json(result);
     } catch (error) {
         res.status(400).json({ msg: error.message });
     }
