@@ -1,3 +1,5 @@
+import { VendorSubscriptionURL } from "../config/Socket.js";
+import { EmitToSocketPost } from "../config/SocketPost.js";
 import User from "../models/UserModel.js";
 import argon2 from "argon2";
 
@@ -17,12 +19,22 @@ export const Login = async (req, res) => {
     const name = user.name;
     const email = user.email;
     const role = user.role;
+    let VendorSocketUrl = await VendorSubscriptionURL(id)
+    console.log("VendorSocketUrl",VendorSocketUrl);
+    let adminToVendor = user && user.toJSON();
+    adminToVendor.type = "LOGIN_SUCCESS"
+    adminToVendor.message = "Login Success"
+    let VendorSocketResponse = {
+        url: VendorSocketUrl,
+        response: adminToVendor
+    }
+    await EmitToSocketPost(VendorSocketResponse)
     res.status(200).json({ id, name, email, role });
 }
 
 export const Me = async (req, res) => {
-    if(!req.session.userId){
-        return res.status(401).json({msg: "Mohon login ke akun Anda!"});
+    if (!req.session.userId) {
+        return res.status(401).json({ msg: "Mohon login ke akun Anda!" });
     }
     const user = await User.findOne({
         attributes: ['id', 'name', 'email', 'role'],

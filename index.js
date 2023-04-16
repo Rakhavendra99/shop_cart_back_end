@@ -8,7 +8,10 @@ import UserRoute from "./routes/UserRoute.js";
 import ProductRoute from "./routes/ProductRoute.js";
 import AuthRoute from "./routes/AuthRoute.js";
 import CategoryRoute from "./routes/CategoryRoute.js"
+import config from "./config/index.js";
+import portocal from 'http'
 dotenv.config();
+const { port } = config;
 
 const app = express();
 
@@ -41,9 +44,39 @@ app.use(UserRoute);
 app.use(ProductRoute);
 app.use(AuthRoute);
 app.use(CategoryRoute);
+const HttpServer = portocal.createServer(app);
 
 // store.sync();
+HttpServer.on('error', onError);
+HttpServer.on('listening', onListening);
+HttpServer.listen(port);
+/**
+ * Event listener for HTTP server "error" event.
+ */
+function onError(error) {
+    if (error.syscall !== 'listen') {
+        throw error;
+    }
 
-app.listen(process.env.APP_PORT, ()=> {
-    console.log('Server up and running...',process.env.APP_PORT);
-});
+    let bind = 'Port ' + port;
+    // handle specific listen errors with friendly messages
+    switch (error.code) {
+        case 'EACCES':
+            console.error(bind + ' requires elevated privileges');
+            process.exit(1);
+        case 'EADDRINUSE':
+            console.error(bind + ' is already in use');
+            process.exit(1);
+        default:
+            throw error;
+    }
+}
+
+/**
+ * Event listener for HTTP server "listening" event.
+ */
+function onListening() {
+    var addr = HttpServer.address();
+    var bind = typeof addr === 'string' ? 'pipe ' + addr : 'port ' + addr.port;
+    console.info('Listening on ' + bind);
+}
