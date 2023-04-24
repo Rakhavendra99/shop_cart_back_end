@@ -97,3 +97,27 @@ export const getProductCategory = async (req, res) => {
         res.status(500).json({ msg: error.message });
     }
 }
+export const getCustomerProducts = async (req, res) => {
+    try {
+        let response = await Product.findAll({
+            include: Category
+        });
+        res.status(200).json(response);
+    } catch (error) {
+        res.status(500).json({ msg: error.message });
+    }
+}
+export const getCustomerProductById = async (req, res) => {
+    const data = getParamsParser(req)
+    try {
+        const product = await Product.findOne({
+            where: {
+                id: data.id
+            }
+        });
+        if (!product) return res.status(403).json({ msg: "Product Id not found" });
+        res.status(200).json(product);
+    } catch (error) {
+        res.status(500).json({ msg: error.message });
+    }
+}

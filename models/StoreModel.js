@@ -24,7 +24,7 @@ const Stores = db.define('store', {
         }
     },
     address: {
-        type: DataTypes.String,
+        type: DataTypes.STRING,
         allowNull: false,
         validate: {
             notEmpty: true
@@ -59,7 +59,7 @@ const Stores = db.define('store', {
         }
     },
     email: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.STRING,
         allowNull: false,
         validate: {
             notEmpty: true

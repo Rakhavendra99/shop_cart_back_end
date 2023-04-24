@@ -9,7 +9,7 @@ function dbconfig() {
             return {
                 sql: {
                     host: "localhost",
-                    database: "shop_cart",
+                    database: "shop",
                     username: "root",
                     password: "root",
                     dialect: "mysql",

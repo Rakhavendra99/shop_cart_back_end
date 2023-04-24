@@ -1,9 +1,11 @@
 import { Sequelize } from "sequelize";
 import db from "../config/Database.js";
+import Cart from "./CartModel.js";
+import Products from "./ProductModel.js";
 
-const { DataTypes } = Sequelize;
+const {DataTypes} = Sequelize;
 
-const Category = db.define('category', {
+const CartItem = db.define('cart_item',{
     id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
@@ -14,38 +16,32 @@ const Category = db.define('category', {
             notEmpty: true
         }
     },
-    name: {
-        type: DataTypes.STRING,
+    cartId:{
+        type: DataTypes.INTEGER,
         allowNull: false,
-        validate: {
+        validate:{
             notEmpty: true,
-            len: [3, 100]
         }
     },
-    image: {
-        type: DataTypes.TEXT,
+    productId:{
+        type: DataTypes.INTEGER,
         allowNull: false,
-        validate: {
-            notEmpty: true
+        validate:{
+            notEmpty: true,
         }
     },
-    storeId: {
+    quantity: {
         type: DataTypes.INTEGER,
         allowNull: false,
         validate: {
             notEmpty: true
         }
-    },
-    isActive: {
-        type: DataTypes.TINYINT,
-        allowNull: false,
-        validate: {
-            notEmpty: true
-        }
     }
-}, {
+},{
     freezeTableName: true
 });
-
-
-export default Category;
+Cart.hasMany(CartItem);
+CartItem.belongsTo(Cart, { foreignKey: 'cartId' });
+Products.hasOne(CartItem);
+CartItem.belongsTo(Products, { foreignKey: 'productId' });
+export default CartItem;

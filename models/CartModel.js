@@ -1,9 +1,11 @@
 import { Sequelize } from "sequelize";
 import db from "../config/Database.js";
+import Users from "./UserModel.js";
+import Stores from "./StoreModel.js";
 
 const { DataTypes } = Sequelize;
 
-const Category = db.define('category', {
+const Cart = db.define('cart', {
     id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
@@ -14,30 +16,22 @@ const Category = db.define('category', {
             notEmpty: true
         }
     },
-    name: {
-        type: DataTypes.STRING,
+    userId: {
+        type: DataTypes.INTEGER,
         allowNull: false,
         validate: {
             notEmpty: true,
-            len: [3, 100]
-        }
-    },
-    image: {
-        type: DataTypes.TEXT,
-        allowNull: false,
-        validate: {
-            notEmpty: true
         }
     },
     storeId: {
         type: DataTypes.INTEGER,
         allowNull: false,
         validate: {
-            notEmpty: true
+            notEmpty: true,
         }
     },
     isActive: {
-        type: DataTypes.TINYINT,
+        type: DataTypes.INTEGER,
         allowNull: false,
         validate: {
             notEmpty: true
@@ -46,6 +40,8 @@ const Category = db.define('category', {
 }, {
     freezeTableName: true
 });
-
-
-export default Category;
+Users.hasOne(Cart);
+Cart.belongsTo(Users, { foreignKey: 'userId' });
+Stores.hasOne(Cart);
+Cart.belongsTo(Stores, { foreignKey: 'storeId' });
+export default Cart;
