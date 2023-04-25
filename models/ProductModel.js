@@ -84,8 +84,6 @@ const Products = db.define('product', {
     freezeTableName: true
 });
 
-Users.hasMany(Products);
-Products.belongsTo(Users, { foreignKey: 'userId' });
 Category.hasMany(Products);
 Products.belongsTo(Category, { foreignKey: 'categoryId' });
 export default Products;

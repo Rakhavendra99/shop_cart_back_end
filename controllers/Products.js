@@ -23,7 +23,8 @@ export const getProductById = async (req, res) => {
         const product = await Product.findOne({
             where: {
                 id: data.id
-            }
+            },
+            include: [{ model: Category }]
         });
         if (!product) return res.status(403).json({ msg: "Product Id not found" });
         res.status(200).json(product);

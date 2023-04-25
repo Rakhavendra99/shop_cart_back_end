@@ -86,9 +86,17 @@ const Stores = db.define('store', {
             notEmpty: true
         }
     },
+    vendorId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        validate: {
+            notEmpty: true
+        }
+    }
 }, {
     freezeTableName: true
 });
-
+// Users.hasOne(Stores);
+// Stores.belongsTo(Users, { foreignKey: 'vendorId' });
 
 export default Stores;
