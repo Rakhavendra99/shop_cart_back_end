@@ -92,9 +92,6 @@ export const getProductCategory = async (req, res) => {
     try {
         let response = await Category.findAll({
             attributes: ['id', 'name'],
-            where: {
-                isActive: 1
-            }
         });
         res.status(200).json(response);
     } catch (error) {
@@ -104,6 +101,9 @@ export const getProductCategory = async (req, res) => {
 export const getCustomerProducts = async (req, res) => {
     try {
         let response = await Product.findAll({
+            where: {
+                isActive: 1
+            },
             include: Category
         });
         res.status(200).json(response);
