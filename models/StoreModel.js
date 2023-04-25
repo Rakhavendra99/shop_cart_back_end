@@ -34,14 +34,14 @@ const Stores = db.define('store', {
         type: DataTypes.TIME,
         allowNull: false,
         validate: {
-            notEmpty: true
+            notEmpty: false
         }
     },
     closeTime: {
         type: DataTypes.TIME,
         allowNull: false,
         validate: {
-            notEmpty: true
+            notEmpty: false
         }
     },
     image: {
@@ -53,6 +53,27 @@ const Stores = db.define('store', {
     },
     isActive: {
         type: DataTypes.INTEGER,
+        allowNull: false,
+        validate: {
+            notEmpty: true
+        }
+    },
+    gstIn: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        validate: {
+            notEmpty: true
+        }
+    },
+    registerNumber: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        validate: {
+            notEmpty: true
+        }
+    },
+    description: {
+        type: DataTypes.TEXT,
         allowNull: false,
         validate: {
             notEmpty: true
