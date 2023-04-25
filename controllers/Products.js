@@ -2,13 +2,14 @@ import Category from "../models/CategoryModel.js";
 import Product from "../models/ProductModel.js";
 import User from "../models/UserModel.js";
 import { Op } from "sequelize";
-import { getParamsParser, postRequestParser } from "../util/index.js";
+import { getParamsParser, getStoreId, postRequestParser } from "../util/index.js";
 
 export const getProducts = async (req, res) => {
+    const storeId = getStoreId(req)
     try {
         let response = await Product.findAll({
             where: {
-                storeId: 1
+                storeId: storeId
             }
         });
         res.status(200).json(response);
@@ -34,18 +35,20 @@ export const getProductById = async (req, res) => {
 }
 
 export const createProduct = async (req, res) => {
+    const storeId = getStoreId(req)
     const data = postRequestParser(req)
     try {
         let findProduct = await Product.findOne({
             where: {
-                name: data.name
+                name: data.name,
+                storeId: storeId
             }
         })
         if (findProduct) {
             return res.status(403).json({ msg: "Product Name Already taken" });
         }
         data.isActive = 1
-        data.storeId = 1
+        data.storeId = storeId
         let product = await Product.create(Object.assign({}, data));
         return res.status(201).json({ msg: product });
     } catch (error) {

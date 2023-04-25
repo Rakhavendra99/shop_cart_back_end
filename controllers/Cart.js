@@ -1,7 +1,7 @@
 import Category from "../models/CategoryModel.js";
 import Product from "../models/ProductModel.js";
 import { Op } from "sequelize";
-import { getParamsParser, getRequestParser, postRequestParser } from "../util/index.js";
+import { getParamsParser, getRequestParser, getStoreId, postRequestParser } from "../util/index.js";
 import Cart from "../models/CartModel.js";
 import CartItem from "../models/CartItem.js";
 
@@ -77,6 +77,7 @@ export const getCartById = async (req, res) => {
 }
 
 export const createCart = async (req, res) => {
+    const storeId = getStoreId(req)
     const data = postRequestParser(req)
     try {
         let findCategory = await Cart.findOne({
@@ -88,7 +89,7 @@ export const createCart = async (req, res) => {
             return res.status(403).json({ msg: "Category Name Already taken" });
         }
         data.isActive = 1
-        data.storeId = 1
+        data.storeId = storeId
         let category = await Category.create(Object.assign({}, data));
         return res.status(201).json({ msg: category });
     } catch (error) {
@@ -110,7 +111,7 @@ export const deleteCart = async (req, res) => {
                 categoryId: data.id,
             }
         })
-        if(findProduct){
+        if (findProduct) {
             return res.status(403).json({ msg: "There is one valid product in this category. So you can't delete it." });
         }
         category.destroy(Object.assign({}, data))

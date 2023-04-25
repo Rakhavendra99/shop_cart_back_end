@@ -19,6 +19,6 @@ router.patch('/users/:id', verifyUser, adminOnly, updateUser);
 router.delete('/users/:id', verifyUser, adminOnly, deleteUser);
 
 router.get('/vendor/dashboard', verifyUser, VendorgetDasboard);
-router.get('/admin/dashboard', verifyUser, adminOnly, AdmingetDasboard);
+router.get('/admin/dashboard', verifyUser, AdmingetDasboard);
 
 export default router;

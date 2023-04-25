@@ -1,8 +1,10 @@
 import Category from "../models/CategoryModel.js";
 import Products from "../models/ProductModel.js";
+import Stores from "../models/StoreModel.js";
 import Users from "../models/UserModel.js";
 import User from "../models/UserModel.js";
 import argon2 from "argon2";
+import { getStoreId } from "../util/index.js";
 
 export const getUsers = async (req, res) => {
     try {
@@ -106,6 +108,7 @@ export const deleteUser = async (req, res) => {
 }
 
 export const VendorgetDasboard = async (req, res) => {
+    const storeId = getStoreId(req)
     const user = await User.findOne({
         where: {
             id: req.session.userId
@@ -115,13 +118,13 @@ export const VendorgetDasboard = async (req, res) => {
     try {
         let productCount = await Products.findAll({
             where: {
-                storeId: 1
+                storeId: storeId
             },
             attributes: ['id']
         });
         let categoryCount = await Category.findAll({
             where: {
-                storeId: 1
+                storeId: storeId
             },
             attributes: ['id']
         })
@@ -149,15 +152,18 @@ export const AdmingetDasboard = async (req, res) => {
             attributes: ['id']
         })
         let vendorCount = await Users.findAll({
-            where:{
+            where: {
                 role: "vendor"
             },
             attributes: ['id']
         })
         let customerCount = await Users.findAll({
-            where:{
+            where: {
                 role: "user"
             },
+            attributes: ['id']
+        })
+        let stores = await Stores.findAll({
             attributes: ['id']
         })
         let result = {}
@@ -165,6 +171,7 @@ export const AdmingetDasboard = async (req, res) => {
         result['categoryCount'] = categoryCount.length
         result['vendorCount'] = vendorCount.length
         result['customerCount'] = customerCount.length
+        result['storesCount'] = stores.length
         res.status(200).json(result);
     } catch (error) {
         res.status(400).json({ msg: error.message });

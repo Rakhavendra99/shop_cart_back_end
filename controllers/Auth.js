@@ -1,5 +1,6 @@
 import { VendorSubscriptionURL } from "../config/Socket.js";
 import { EmitToSocketPost } from "../config/SocketPost.js";
+import Stores from "../models/StoreModel.js";
 import User from "../models/UserModel.js";
 import argon2 from "argon2";
 
@@ -15,12 +16,20 @@ export const Login = async (req, res) => {
     const match = await argon2.verify(user.password, req.body.password);
     if (!match) return res.status(400).json({ msg: "Wrong Password" });
     req.session.userId = user.id;
+    if (user.role === "vendor") {
+        let findStore = await Stores.findOne({
+            where: {
+                vendorId: user.id
+            }
+        })
+        req.session.storeId = findStore.id
+    }
     const id = user.id;
     const name = user.name;
     const email = user.email;
     const role = user.role;
     let VendorSocketUrl = await VendorSubscriptionURL(id)
-    console.log("VendorSocketUrl",VendorSocketUrl);
+    console.log("VendorSocketUrl", VendorSocketUrl);
     let adminToVendor = user && user.toJSON();
     adminToVendor.type = "LOGIN_SUCCESS"
     adminToVendor.message = "Login Success"
