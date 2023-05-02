@@ -4,6 +4,7 @@ import { Op } from "sequelize";
 import { getParamsParser, getRequestParser, getStoreId, postRequestParser } from "../util/index.js";
 import Cart from "../models/CartModel.js";
 import CartItem from "../models/CartItem.js";
+import Stores from "../models/StoreModel.js";
 
 export const getCartById = async (req, res) => {
     const data = getParamsParser(req)
@@ -12,31 +13,39 @@ export const getCartById = async (req, res) => {
             where: {
                 id: data.id
             },
-            // include: CartItem
         });
-        console.log(cart);
         if (cart && cart.id) {
+            let store = await Stores.findOne({
+                where:{
+                    id: cart.storeId
+                }
+            })
             //total cart calculation
             let totalCarts = 0
-            cart && cart.CartItems.forEach((item) => {
+            let CartItems = await CartItem.findAll({
+                where: {
+                    cartId: data.id
+                },
+                include: Product,
+            })
+            CartItems && CartItems.forEach((item) => {
                 let quantity = item.quantity
                 totalCarts = totalCarts + quantity
             })
-
             //Product amount calculation
             let productAmount = []
-            cart && cart.CartItems.forEach((item) => {
+            CartItems && CartItems.forEach((item) => {
                 let quantity = item.quantity
-                let unitPrice = item.Product.productPrice
+                let unitPrice = item.product.price
                 let amount = quantity * unitPrice
                 productAmount.push(amount)
             })
 
             //TotalAmount calculation
             let totalAmount = 0
-            cart && cart.CartItems.forEach((item) => {
+            CartItems && CartItems.forEach((item) => {
                 let quantity = item.quantity
-                let unitPrice = item.Product.productPrice
+                let unitPrice = item.product.price
                 let amount = quantity * unitPrice
                 totalAmount = totalAmount + amount
             });
@@ -44,31 +53,32 @@ export const getCartById = async (req, res) => {
             //TotalTax  calculation
             let totalTax = []
             let totalTaxAmount = 0
-            cart && cart.CartItems.forEach((item) => {
+            CartItems && CartItems.forEach((item) => {
                 let quantity = item.quantity
-                let productCgst = item.Product.prodcutCgst
-                let prodcutSgst = item.Product.prodcutSgst
-                let price = item.Product.productPrice
+                let productCgst = item.product.prodcutCgst
+                let prodcutSgst = item.product.prodcutSgst
+                let price = item.product.productPrice
                 let tax = (productCgst + prodcutSgst) * price / 100
                 let taxAmount = quantity * tax
                 totalTax.push(taxAmount)
                 totalTaxAmount += taxAmount
             })
-            let tax = totalAmount * CartConstant.OverAllTax
+            let tax = 0.1
             let cartData = cart.toJSON();
             let cartDetails = {}
             cartDetails["id"] = cartData.id
             cartDetails["createdAt"] = cartData.createdAt
             cartDetails["userId"] = cartData.userId
             cartDetails["storeId"] = cartData.storeId
+            cartDetails["store"] = store
             cartDetails["active"] = cartData.active
-            cartDetails["CartItems"] = cartData.CartItems
+            cartDetails["CartItems"] = CartItems
             cartDetails["totalItems"] = totalCarts
             cartDetails["tax"] = tax
             cartDetails["totalAmount"] = totalAmount + tax
             cartDetails["subTotal"] = totalAmount
             cartDetails["productAmount"] = productAmount
-            return ResponseHandler.success(methodName, cartDetails)
+            return res.status(201).json({ msg: cartDetails });
         }
         res.status(200).json(cart);
     } catch (error) {
@@ -77,21 +87,75 @@ export const getCartById = async (req, res) => {
 }
 
 export const createCart = async (req, res) => {
-    const storeId = getStoreId(req)
     const data = postRequestParser(req)
     try {
-        let findCategory = await Cart.findOne({
+        let { productId, quantity, cartId, storeId } = data
+        let findProduct = await Product.findOne({
             where: {
-                name: data.name
+                id: productId,
+                storeId: storeId,
+                isActive: 1
             }
         })
-        if (findCategory) {
-            return res.status(403).json({ msg: "Category Name Already taken" });
+        const productDetails = findProduct && findProduct.toJSON()
+        if (!productDetails && quantity !== 0) {
+            return res.status(403).json({ msg: "The product is currently unavailable" });
         }
-        data.isActive = 1
-        data.storeId = storeId
-        let category = await Category.create(Object.assign({}, data));
-        return res.status(201).json({ msg: category });
+        if ((!cartId || cartId == "null") && productDetails) {
+            data.createdAt = new Date();
+            data.isActive = 1;
+            let createCart = await Cart.create(Object.assign({}, data))
+            let createItem = await CartItem.create({
+                cartId: createCart.id,
+                productId: productId,
+                quantity: quantity,
+                createdAt: new Date()
+            })
+            let result = {}
+            result["cart"] = createCart
+            result["cartItem"] = createItem
+            return res.status(201).json({ msg: result });
+        }
+        if (cartId) {
+            let cart = await Cart.findOne({
+                where: {
+                    id: cartId,
+                    isActive: 1
+                }
+            })
+            const cartDetails = cart && cart.toJSON()//need to check negative cases
+            let cartItemDetails = await CartItem.findOne({
+                where: {
+                    cartId: cartId,
+                    productId: productId,
+                }
+            })
+            if (cartItemDetails) {
+                if (quantity === 0) {
+                    await cartItemDetails.destroy();
+                } else {
+                    cartItemDetails.update(
+                        {
+                            quantity: quantity
+                        }
+                    )
+                }
+                let result = {}
+                result["cart"] = cartDetails
+                result["cartItem"] = cartItemDetails
+                return res.status(201).json({ msg: result });
+            } else {
+                let createItem = await Entity.CartItem.create({
+                    cartId: data.cartId,
+                    productId: productId,
+                    quantity: quantity,
+                })
+                let result = {}
+                result["cart"] = cartDetails
+                result["cartItem"] = createItem
+                return res.status(201).json({ msg: result });
+            }
+        }
     } catch (error) {
         res.status(500).json({ msg: error.message });
     }
