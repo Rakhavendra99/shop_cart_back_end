@@ -1,9 +1,9 @@
 import { Sequelize } from "sequelize";
 import db from "../config/Database.js";
 
-const {DataTypes} = Sequelize;
+const { DataTypes } = Sequelize;
 
-const Users = db.define('users',{
+const OrderItems = db.define('orderItems', {
     id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
@@ -14,42 +14,51 @@ const Users = db.define('users',{
             notEmpty: true
         }
     },
-    name:{
-        type: DataTypes.STRING,
-        allowNull: false,
-        validate:{
-            notEmpty: true,
-            len: [3, 100]
-        }
-    },
-    email:{
-        type: DataTypes.STRING,
-        allowNull: false,
-        validate:{
-            notEmpty: true,
-            isEmail: true
-        }
-    },
-    password:{
-        type: DataTypes.STRING,
-        allowNull: true,
-        validate:{
-            notEmpty: true
-        }
-    },
-    role:{
-        type: DataTypes.STRING,
-        allowNull: false,
-        validate:{
-            notEmpty: true
-        }
-    },
-    phone:{
+    orderId: {
         type: DataTypes.INTEGER,
         allowNull: true,
-    }
-},{
+        validate: {
+            notEmpty: true,
+        }
+    },
+    productId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        validate: {
+            notEmpty: true,
+        }
+    },
+    quantity: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        validate: {
+            notEmpty: true,
+        }
+    },
+    productPrice: {
+        type: DataTypes.DOUBLE,
+        allowNull: false,
+        validate: {
+            notEmpty: true
+        }
+    },
+    gst: {
+        type: DataTypes.DOUBLE,
+        allowNull: false,
+        validate: {
+            notEmpty: true
+        }
+    },
+    orderType: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        validate: {
+            notEmpty: true
+        }
+    },
+}, {
     freezeTableName: true
 });
 
-export default Users;
+
+export default OrderItems;

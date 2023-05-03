@@ -12,6 +12,7 @@ import CartRoute from "./routes/CartRoute.js"
 import StoreRoute from "./routes/StoreRoute.js"
 import config from "./config/index.js";
 import portocal from 'http'
+import OrderRoute from './routes/OrderRoute.js'
 dotenv.config();
 const { port } = config;
 
@@ -48,6 +49,8 @@ app.use(AuthRoute);
 app.use(CategoryRoute);
 app.use(CartRoute);
 app.use(StoreRoute);
+app.use(OrderRoute);
+
 const HttpServer = portocal.createServer(app);
 
 // store.sync();

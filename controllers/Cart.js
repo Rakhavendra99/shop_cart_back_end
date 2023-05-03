@@ -11,12 +11,13 @@ export const getCartById = async (req, res) => {
     try {
         const cart = await Cart.findOne({
             where: {
-                id: data.id
+                id: data.id,
+                isActive: 1
             },
         });
         if (cart && cart.id) {
             let store = await Stores.findOne({
-                where:{
+                where: {
                     id: cart.storeId
                 }
             })
@@ -55,15 +56,17 @@ export const getCartById = async (req, res) => {
             let totalTaxAmount = 0
             CartItems && CartItems.forEach((item) => {
                 let quantity = item.quantity
-                let productCgst = item.product.prodcutCgst
-                let prodcutSgst = item.product.prodcutSgst
+                let productgst = item.product.gst
                 let price = item.product.productPrice
-                let tax = (productCgst + prodcutSgst) * price / 100
+                let tax = (productgst) * price / 100
                 let taxAmount = quantity * tax
                 totalTax.push(taxAmount)
                 totalTaxAmount += taxAmount
             })
-            let tax = 0.1
+            let tax = 0
+            CartItems && CartItems.forEach(item => {
+                tax += item.product.gst
+            })
             let cartData = cart.toJSON();
             let cartDetails = {}
             cartDetails["id"] = cartData.id
@@ -80,7 +83,10 @@ export const getCartById = async (req, res) => {
             cartDetails["productAmount"] = productAmount
             return res.status(201).json({ msg: cartDetails });
         }
-        res.status(200).json(cart);
+        let cartDetails = {}
+        cartDetails["Cart"] = null
+        cartDetails["CartItems"] = []
+        res.status(200).json({ msg: cartDetails });
     } catch (error) {
         res.status(500).json({ msg: error.message });
     }
