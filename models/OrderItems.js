@@ -1,5 +1,7 @@
 import { Sequelize } from "sequelize";
 import db from "../config/Database.js";
+import Orders from "./OrderModel.js";
+import Products from "./ProductModel.js";
 
 const { DataTypes } = Sequelize;
 
@@ -60,5 +62,8 @@ const OrderItems = db.define('orderItems', {
     freezeTableName: true
 });
 
-
+Orders.hasMany(OrderItems);
+OrderItems.belongsTo(Orders, { foreignKey: 'orderId' });
+Products.hasOne(OrderItems);
+OrderItems.belongsTo(Products, { foreignKey: 'productId' });
 export default OrderItems;

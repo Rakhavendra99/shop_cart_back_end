@@ -216,3 +216,41 @@ export const createOrder = async (req, res) => {
         res.status(500).json({ msg: error.message });
     }
 }
+export const getOrders = async (req, res) => {
+    const storeId = getStoreId(req)
+    try {
+        let response = await Orders.findAll({
+            where: {
+                storeId: storeId
+            },
+            include: Users
+        });
+        res.status(200).json(response);
+    } catch (error) {
+        res.status(500).json({ msg: error.message });
+    }
+}
+
+export const getOrderById = async (req, res) => {
+    const data = getParamsParser(req)
+    try {
+        let Order = await Orders.findOne({
+            where: {
+                id: data.id
+            },
+            include: Users,
+        });
+        if (!Order) return res.status(403).json({ msg: "Order Id not found" });
+        const OrderItem = await OrderItems.findAll({
+            where: {
+                orderId: Order.id
+            },
+            include: Products
+        })
+        Order = Order.toJSON()
+        Order.OrderItems = OrderItem
+        res.status(200).json(Order);
+    } catch (error) {
+        res.status(500).json({ msg: error.message });
+    }
+}
