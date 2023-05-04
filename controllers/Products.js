@@ -2,16 +2,17 @@ import Category from "../models/CategoryModel.js";
 import Product from "../models/ProductModel.js";
 import User from "../models/UserModel.js";
 import { Op } from "sequelize";
-import { getParamsParser, getStoreId, postRequestParser } from "../util/index.js";
+import { getParamsParser, getRole, getStoreId, postRequestParser } from "../util/index.js";
+import Stores from "../models/StoreModel.js";
 
 export const getProducts = async (req, res) => {
+    const role = getRole(req)
     const storeId = getStoreId(req)
     try {
-        let response = await Product.findAll({
-            where: {
-                storeId: storeId
-            }
-        });
+        let where = role === "vendor" ? {
+            storeId: storeId
+        } : {}
+        let response = await Product.findAll({ where });
         res.status(200).json(response);
     } catch (error) {
         res.status(500).json({ msg: error.message });
@@ -104,7 +105,13 @@ export const getCustomerProducts = async (req, res) => {
             where: {
                 isActive: 1
             },
-            include: Category
+            include: Category,
+            include: [{
+                model: Stores,
+                where: {
+                    isActive: 1
+                }
+            }]
         });
         res.status(200).json(response);
     } catch (error) {

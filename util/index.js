@@ -8,6 +8,9 @@ export const getStoreId = (req) => req.session.storeId;
 
 export const getUserId = (req) => req.session.userId
 
+export const getRole = (req) => req.session.role
+
+
 export const OrderStatus = {
     ORDER_INITIATE: 1,
     ORDER_ACCEPTED: 2,

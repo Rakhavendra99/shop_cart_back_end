@@ -2,6 +2,7 @@ import { Sequelize } from "sequelize";
 import db from "../config/Database.js";
 import Users from "./UserModel.js";
 import Category from "./CategoryModel.js";
+import Stores from "./StoreModel.js";
 
 const { DataTypes } = Sequelize;
 
@@ -86,4 +87,6 @@ const Products = db.define('product', {
 
 Category.hasMany(Products);
 Products.belongsTo(Category, { foreignKey: 'categoryId' });
+Stores.hasMany(Products);
+Products.belongsTo(Stores, { foreignKey: 'storeId' });
 export default Products;

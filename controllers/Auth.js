@@ -16,12 +16,21 @@ export const Login = async (req, res) => {
     const match = await argon2.verify(user.password, req.body.password);
     if (!match) return res.status(400).json({ msg: "Wrong Password" });
     req.session.userId = user.id;
+    req.session.role = user.role;
     if (user.role === "vendor") {
         let findStore = await Stores.findOne({
             where: {
                 vendorId: user.id
             }
         })
+        if (!findStore) return res.status(404).json({ msg: "Store Not Config this email, Please contact administrator." });
+        let findStoreActive = await Stores.findOne({
+            where: {
+                vendorId: user.id,
+                isActive: 1
+            }
+        })
+        if (!findStoreActive) return res.status(404).json({ msg: "Your Store Disabled by Admin, Please contact administrator." });
         req.session.storeId = findStore.id
     }
     const id = user.id;
@@ -29,7 +38,6 @@ export const Login = async (req, res) => {
     const email = user.email;
     const role = user.role;
     let VendorSocketUrl = await VendorSubscriptionURL(id)
-    console.log("VendorSocketUrl", VendorSocketUrl);
     let adminToVendor = user && user.toJSON();
     adminToVendor.type = "LOGIN_SUCCESS"
     adminToVendor.message = "Login Success"

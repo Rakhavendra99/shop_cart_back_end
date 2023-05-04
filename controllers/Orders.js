@@ -1,7 +1,7 @@
 import Category from "../models/CategoryModel.js";
 import Product from "../models/ProductModel.js";
 import { Op } from "sequelize";
-import { OrderStatus, getParamsParser, getRequestParser, getStoreId, postRequestParser } from "../util/index.js";
+import { OrderStatus, getParamsParser, getRequestParser, getRole, getStoreId, postRequestParser } from "../util/index.js";
 import Cart from "../models/CartModel.js";
 import CartItem from "../models/CartItem.js";
 import Stores from "../models/StoreModel.js";
@@ -218,11 +218,13 @@ export const createOrder = async (req, res) => {
 }
 export const getOrders = async (req, res) => {
     const storeId = getStoreId(req)
+    const role = getRole(req)
     try {
+        let where = role === "vendor" ? {
+            storeId: storeId
+        } : {}
         let response = await Orders.findAll({
-            where: {
-                storeId: storeId
-            },
+            where,
             include: Users
         });
         res.status(200).json(response);
@@ -250,6 +252,22 @@ export const getOrderById = async (req, res) => {
         Order = Order.toJSON()
         Order.OrderItems = OrderItem
         res.status(200).json(Order);
+    } catch (error) {
+        res.status(500).json({ msg: error.message });
+    }
+}
+export const updateOrder = async (req, res) => {
+    const params = getParamsParser(req)
+    const data = postRequestParser(req)
+    try {
+        const findOrder = await Orders.findOne({
+            where: {
+                id: params.id
+            }
+        });
+        if (!findOrder) return res.status(403).json({ msg: "Order Id not found" });
+        await findOrder.update(Object.assign({}, data))
+        res.status(200).json({ msg: findOrder });
     } catch (error) {
         res.status(500).json({ msg: error.message });
     }

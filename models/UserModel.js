@@ -47,6 +47,10 @@ const Users = db.define('users',{
     phone:{
         type: DataTypes.INTEGER,
         allowNull: true,
+    },
+    isActive:{
+        type: DataTypes.INTEGER,
+        allowNull: true,
     }
 },{
     freezeTableName: true

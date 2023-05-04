@@ -4,12 +4,15 @@ import Stores from "../models/StoreModel.js";
 import Users from "../models/UserModel.js";
 import User from "../models/UserModel.js";
 import argon2 from "argon2";
-import { getStoreId } from "../util/index.js";
+import { getStoreId, postRequestParser } from "../util/index.js";
 
 export const getUsers = async (req, res) => {
     try {
         const response = await User.findAll({
-            attributes: ['id', 'name', 'email', 'role']
+            where: {
+                role: ["customer", "vendor"]
+            },
+            attributes: ['id', 'name', 'email', 'role', 'isActive']
         });
         res.status(200).json(response);
     } catch (error) {
@@ -48,7 +51,8 @@ export const createUser = async (req, res) => {
             name: name,
             email: email,
             password: hashPassword,
-            role: role
+            role: role,
+            isActive: 1
         });
         res.status(201).json({ msg: createUsers });
     } catch (error) {
@@ -65,23 +69,20 @@ export const updateUser = async (req, res) => {
     if (!user) return res.status(403).json({ msg: "User id not found" });
     const { name, email, password, confPassword, role } = req.body;
     let hashPassword;
-    if (password === "" || password === null) {
-        hashPassword = user.password
-    } else {
-        hashPassword = await argon2.hash(password);
+    if (password) {
+        if (password === "" || password === null) {
+            hashPassword = user.password
+        } else {
+            hashPassword = await argon2.hash(password);
+        }
+        if (password !== confPassword) {
+            return res.status(400).json({ msg: "Password not match" });
+        }
     }
-    if (password !== confPassword) return res.status(400).json({ msg: "Password not match" });
+    const data = postRequestParser(req)
     try {
-        let updateUser = await User.update({
-            name: name,
-            email: email,
-            password: hashPassword,
-            role: role
-        }, {
-            where: {
-                id: user.id
-            }
-        });
+        data.password = hashPassword
+        let updateUser = await user.update(Object.assign({}, data))
         res.status(200).json({ msg: updateUser });
     } catch (error) {
         res.status(400).json({ msg: error.message });
