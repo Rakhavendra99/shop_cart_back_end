@@ -105,13 +105,14 @@ export const getCustomerProducts = async (req, res) => {
             where: {
                 isActive: 1
             },
-            include: Category,
-            include: [{
-                model: Stores,
-                where: {
-                    isActive: 1
-                }
-            }]
+            include: [
+                { model: Category, },
+                {
+                    model: Stores,
+                    where: {
+                        isActive: 1
+                    }
+                }]
         });
         res.status(200).json(response);
     } catch (error) {

@@ -160,7 +160,7 @@ export const AdmingetDasboard = async (req, res) => {
         })
         let customerCount = await Users.findAll({
             where: {
-                role: "user"
+                role: "customer"
             },
             attributes: ['id']
         })
