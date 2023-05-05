@@ -5,6 +5,8 @@ import { getParamsParser, getRequestParser, getStoreId, postRequestParser } from
 import Cart from "../models/CartModel.js";
 import CartItem from "../models/CartItem.js";
 import Stores from "../models/StoreModel.js";
+import { CustomerSubscriptionURL } from "../config/Socket.js";
+import { EmitToSocketPost } from "../config/SocketPost.js";
 
 export const getCartById = async (req, res) => {
     const data = getParamsParser(req)
@@ -120,6 +122,15 @@ export const createCart = async (req, res) => {
             let result = {}
             result["cart"] = createCart
             result["cartItem"] = createItem
+            let VendorSocketUrl = await CustomerSubscriptionURL(3)
+            let adminToVendor = {}
+            adminToVendor.cartQuantity = createItem.quantity
+            adminToVendor.type = "ADD_CART"
+            let VendorSocketResponse = {
+                url: VendorSocketUrl,
+                response: adminToVendor
+            }
+            await EmitToSocketPost(VendorSocketResponse)
             return res.status(201).json({ msg: result });
         }
         if (cartId) {
@@ -149,9 +160,18 @@ export const createCart = async (req, res) => {
                 let result = {}
                 result["cart"] = cartDetails
                 result["cartItem"] = cartItemDetails
+                let VendorSocketUrl = await CustomerSubscriptionURL(3)
+                let adminToVendor = {}
+                adminToVendor.cartQuantity = cartItemDetails.quantity
+                adminToVendor.type = "ADD_CART"
+                let VendorSocketResponse = {
+                    url: VendorSocketUrl,
+                    response: adminToVendor
+                }
+                await EmitToSocketPost(VendorSocketResponse)
                 return res.status(201).json({ msg: result });
             } else {
-                let createItem = await Entity.CartItem.create({
+                let createItem = await CartItem.create({
                     cartId: data.cartId,
                     productId: productId,
                     quantity: quantity,
@@ -159,6 +179,15 @@ export const createCart = async (req, res) => {
                 let result = {}
                 result["cart"] = cartDetails
                 result["cartItem"] = createItem
+                let VendorSocketUrl = await CustomerSubscriptionURL(3)
+                let adminToVendor = {}
+                adminToVendor.cartQuantity = createItem.quantity
+                adminToVendor.type = "ADD_CART"
+                let VendorSocketResponse = {
+                    url: VendorSocketUrl,
+                    response: adminToVendor
+                }
+                await EmitToSocketPost(VendorSocketResponse)
                 return res.status(201).json({ msg: result });
             }
         }

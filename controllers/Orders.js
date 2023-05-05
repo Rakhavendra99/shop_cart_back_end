@@ -9,6 +9,8 @@ import Users from "../models/UserModel.js";
 import Orders from "../models/OrderModel.js";
 import OrderItems from "../models/OrderItems.js";
 import Products from "../models/ProductModel.js";
+import { VendorSubscriptionURL } from "../config/Socket.js";
+import { EmitToSocketPost } from "../config/SocketPost.js";
 
 export const calculateTotalAmount = (CartItems) => {
     try {
@@ -117,7 +119,7 @@ export const createOrder = async (req, res) => {
         } else {
             let getUser = await Users.findOne({
                 where: {
-                    // phone: data.phone,
+                    phone: data.phone,
                     email: data.email,
                 }
             })
@@ -160,6 +162,14 @@ export const createOrder = async (req, res) => {
                     })
                 });
                 await cart && cart.update({ isActive: 0 })
+                let vendorSubscriptionUrl = await VendorSubscriptionURL(2)
+                let CustomerToVendor = createOrder && createOrder.toJSON()
+                CustomerToVendor.type = "NEW_ORDER"
+                let VendorSocketResponse = {
+                    url: vendorSubscriptionUrl,
+                    response: CustomerToVendor
+                }
+                await EmitToSocketPost(VendorSocketResponse)
                 return res.status(201).json({ msg: createOrder });
 
             } else {
@@ -207,6 +217,14 @@ export const createOrder = async (req, res) => {
                         })
                     });
                     await cart && cart.update({ isActive: 0 })
+                    let vendorSubscriptionUrl = await VendorSubscriptionURL(2)
+                    let CustomerToVendor = createOrder && createOrder.toJSON()
+                    CustomerToVendor.type = "NEW_ORDER"
+                    let VendorSocketResponse = {
+                        url: vendorSubscriptionUrl,
+                        response: CustomerToVendor
+                    }
+                    await EmitToSocketPost(VendorSocketResponse)
                     return res.status(201).json({ msg: createOrder });
 
                 }

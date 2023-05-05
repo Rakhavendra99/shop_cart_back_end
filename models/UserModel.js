@@ -45,7 +45,7 @@ const Users = db.define('users',{
         }
     },
     phone:{
-        type: DataTypes.INTEGER,
+        type: DataTypes.STRING(15),
         allowNull: true,
     },
     isActive:{

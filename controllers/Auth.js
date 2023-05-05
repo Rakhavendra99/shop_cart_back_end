@@ -51,7 +51,7 @@ export const Login = async (req, res) => {
 
 export const Me = async (req, res) => {
     if (!req.session.userId) {
-        return res.status(401).json({ msg: "Mohon login ke akun Anda!" });
+        return res.status(401).json({ msg: "Session userId not found." });
     }
     const user = await User.findOne({
         attributes: ['id', 'name', 'email', 'role'],
