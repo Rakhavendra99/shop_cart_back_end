@@ -12,7 +12,7 @@ export const getProducts = async (req, res) => {
         let where = role === "vendor" ? {
             storeId: storeId
         } : {}
-        let response = await Product.findAll({ where });
+        let response = await Product.findAll({ where, include: [{ model: Stores }] });
         res.status(200).json(response);
     } catch (error) {
         res.status(500).json({ msg: error.message });
@@ -90,8 +90,14 @@ export const deleteProduct = async (req, res) => {
     }
 }
 export const getProductCategory = async (req, res) => {
+    const role = getRole(req)
+    const storeId = getStoreId(req)
     try {
         let response = await Category.findAll({
+            where: {
+                storeId: storeId,
+                isActive: 1
+            },
             attributes: ['id', 'name'],
         });
         res.status(200).json(response);

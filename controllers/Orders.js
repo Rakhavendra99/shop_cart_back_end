@@ -82,6 +82,9 @@ export const createOrder = async (req, res) => {
     const data = postRequestParser(req)
     try {
         let payment = {}
+        if(!data.storeId){
+            return res.status(403).json({ msg: "Store Id Not found Plese refresh the page." });
+        }
         let cart = await Cart.findOne({
             where: {
                 id: data.cartId
@@ -114,6 +117,7 @@ export const createOrder = async (req, res) => {
         userData.email = data.email
         userData.name = data.name
         userData.phone = data.phone
+        userData.isActive = 1
         if (totalAmount <= 0) {
             return res.status(403).json({ msg: "The payment cannot be done for this amount" });
         } else {
