@@ -137,9 +137,13 @@ export const createCart = async (req, res) => {
             let cart = await Cart.findOne({
                 where: {
                     id: cartId,
+                    storeId: storeId,
                     isActive: 1
                 }
             })
+            if(!cart){
+                return res.status(403).json({ msg: "Please remove current cart, and add new cart." });
+            }
             const cartDetails = cart && cart.toJSON()//need to check negative cases
             let cartItemDetails = await CartItem.findOne({
                 where: {
