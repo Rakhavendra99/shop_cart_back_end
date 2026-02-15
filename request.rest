@@ -13,3 +13,5 @@ Content-Type: : application/json
 // get all users
 
 GET http://localhost:5000/users
+
+INSERT INTO `shop`.`users` (`id`, `name`, `email`, `password`, `role`, `phone`, `isActive`, `createdAt`, `updatedAt`) VALUES ('1', 'Admin', 'admin@gmail.com', '$argon2id$v=19$m=4096,t=3,p=1$SgtzadBmZaoKVU69cpm0qA$XFPq3fn6CJ7HMkox605j17rgXK6xKC5oQEHDoa1p6LY', 'admin', '9834233323', '1', '2026-02-08 17:35:14', '2026-02-08 17:35:14');
