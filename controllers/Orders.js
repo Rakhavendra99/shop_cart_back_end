@@ -1,4 +1,3 @@
-import Category from "../models/CategoryModel.js";
 import Product from "../models/ProductModel.js";
 import { Op } from "sequelize";
 import { OrderStatus, getParamsParser, getRequestParser, getRole, getStoreId, postRequestParser } from "../util/index.js";
@@ -9,8 +8,13 @@ import Users from "../models/UserModel.js";
 import Orders from "../models/OrderModel.js";
 import OrderItems from "../models/OrderItems.js";
 import Products from "../models/ProductModel.js";
+import Payments from "../models/PaymentModel.js";
 import { VendorSubscriptionURL } from "../config/Socket.js";
 import { EmitToSocketPost } from "../config/SocketPost.js";
+import { isStoreOpen } from "../util/storeHelpers.js";
+
+const PAYMENT_METHOD = { STRIPE: "stripe", COD: "cod" };
+const PAYMENT_STATUS = { SUCCESS: "SUCCESS", FAILED: "FAILED", PENDING: "PENDING", PAID: "PAID" };
 
 export const calculateTotalAmount = (CartItems) => {
     try {
@@ -31,7 +35,7 @@ export const calculateTotalAmount = (CartItems) => {
             let productgst = item.product.gst
             let price = item.product.price
             let tax = (productgst) * price / 100
-            let taxAmount = totalAmount * tax
+            let taxAmount = quantity * tax
             totalTax.push(taxAmount)
             totalTaxAmount += taxAmount
         })
@@ -81,37 +85,57 @@ export const calculateTotalAmountExcludingTax = (CartItems) => {
 export const createOrder = async (req, res) => {
     const data = postRequestParser(req)
     try {
-        let payment = {}
-        if(!data.storeId){
-            return res.status(403).json({ msg: "Store Id Not found Plese refresh the page." });
+        const paymentMethod = (data.payment_method || "cod").toLowerCase();
+        if (paymentMethod !== PAYMENT_METHOD.COD) {
+            return res.status(403).json({ msg: "Use Stripe Pay Now for online payment. This endpoint is for Cash on Delivery only." });
+        }
+        if (!data.storeId) {
+            return res.status(403).json({ msg: "Store Id Not found. Please refresh the page." });
+        }
+        if (!data.cartId) {
+            return res.status(403).json({ msg: "Cart not found. Please add items and try again." });
         }
         let cart = await Cart.findOne({
-            where: {
-                id: data.cartId
-            }
-        })
+            where: { id: data.cartId }
+        });
+        if (!cart) {
+            return res.status(403).json({ msg: "Cart not found." });
+        }
+        if (cart.isActive !== 1) {
+            return res.status(403).json({ msg: "This cart was already used for an order. Please use a new cart." });
+        }
+        if (Number(cart.storeId) !== Number(data.storeId)) {
+            return res.status(403).json({ msg: "Cart does not match store. Please refresh and try again." });
+        }
+        let store = await Stores.findOne({ where: { id: data.storeId } });
+        if (store && !isStoreOpen(store)) {
+            return res.status(403).json({ msg: "Store is currently closed. You cannot place an order." });
+        }
         let CartItems = await CartItem.findAll({
-            where: {
-                cartId: data.cartId
-            },
+            where: { cartId: data.cartId },
             include: Product,
-        })
-        let totalAmount = await calculateTotalAmount(CartItems)
-        let totalTaxAmount = await calculateTotalTax(CartItems)
-        let totalAmountExcludingTax = await calculateTotalAmountExcludingTax(CartItems)
-        let findQuantity = []
+        });
+        if (!CartItems || CartItems.length === 0) {
+            return res.status(403).json({ msg: "Cart is empty. Please add items before placing an order." });
+        }
         let findActive = []
-        await CartItems && CartItems.forEach(async (o) => {
-            if (o.product.isActive == 0) {
-                findQuantity.push(1)
-                findActive.push(1)
-            } else {
-                findQuantity = []
+        let insufficientStock = []
+        CartItems.forEach((o) => {
+            if (o.product.isActive == 0) findActive.push(1);
+            else if (o.product.availableQuantity != null && o.quantity > o.product.availableQuantity) {
+                insufficientStock.push({ name: o.product.name, available: o.product.availableQuantity, requested: o.quantity });
             }
-        })
+        });
         if (findActive.length >= 1) {
             return res.status(403).json({ msg: "The selected product is not available right now, so you cannot place the order." });
         }
+        if (insufficientStock.length > 0) {
+            const first = insufficientStock[0];
+            return res.status(403).json({ msg: `Insufficient stock for "${first.name}". Only ${first.available} available, ${first.requested} requested.` });
+        }
+        let totalTaxAmount = await calculateTotalTax(CartItems);
+        let totalAmountExcludingTax = await calculateTotalAmountExcludingTax(CartItems);
+        let totalAmount = totalAmountExcludingTax + totalTaxAmount;
         let userData = {}
         userData.role = "customer"
         userData.email = data.email
@@ -131,26 +155,17 @@ export const createOrder = async (req, res) => {
             if (!User) {
                 let orderItem = {}
                 let createUser = await Users.create(Object.assign({}, userData))
-                let totalAmount = 0
-                totalAmount = CartItems.reduce(function (previousValue, currentValue) {
-                    return previousValue + currentValue.quantity * currentValue.product.price;
-                }, 0);
                 let order = {}
-                let tax = 0
-                CartItems && CartItems.forEach(item => {
-                    tax += item.product.gst
-                })
                 order.status = OrderStatus.ORDER_INITIATE
                 order.totalAmount = totalAmount
-                order.totalTaxAmount = tax
-                order.totalAmountExcludingTax = totalAmount
+                order.totalTaxAmount = totalTaxAmount
                 order.address = data.address
                 order.userId = createUser.id
                 order.orderType = data.orderType
                 order.storeId = data.storeId
                 order.isActive = 1
                 let createOrder = await Orders.create(Object.assign({}, order))
-                CartItems && CartItems.forEach(async obj => {
+                for (const obj of CartItems) {
                     orderItem.orderId = createOrder.id
                     orderItem.productId = obj.productId
                     orderItem.quantity = obj.quantity
@@ -158,14 +173,16 @@ export const createOrder = async (req, res) => {
                     orderItem.orderType = data.orderType
                     orderItem.gst = obj.product.gst
                     await OrderItems.create(Object.assign({}, orderItem))
-                    let findProducts = await Products.findOne({
-                        where: {
-                            id: obj.productId
-                        },
-                        attributes: ['id', 'name']
-                    })
+                    await Products.decrement('availableQuantity', { by: obj.quantity, where: { id: obj.productId } })
+                }
+                await cart.update({ isActive: 0 })
+                await Payments.create({
+                    orderId: createOrder.id,
+                    payment_method: PAYMENT_METHOD.COD,
+                    payment_status: PAYMENT_STATUS.PENDING,
+                    transaction_reference: null,
+                    amount: totalAmount,
                 });
-                await cart && cart.update({ isActive: 0 })
                 let vendorSubscriptionUrl = await VendorSubscriptionURL(2)
                 let CustomerToVendor = createOrder && createOrder.toJSON()
                 CustomerToVendor.type = "NEW_ORDER"
@@ -186,26 +203,17 @@ export const createOrder = async (req, res) => {
                     return res.status(403).json({ msg: "TPlease enter your email id." });
                 } else {
                     let orderItem = {}
-                    let totalAmount = 0
-                    totalAmount = CartItems.reduce(function (previousValue, currentValue) {
-                        return previousValue + currentValue.quantity * currentValue.product.price;
-                    }, 0);
                     let order = {}
-                    let tax = 0
-                    CartItems && CartItems.forEach(item => {
-                        tax += item.product.gst
-                    })
                     order.status = OrderStatus.ORDER_INITIATE
                     order.totalAmount = totalAmount
-                    order.totalTaxAmount = tax
-                    order.totalAmountExcludingTax = totalAmount
+                    order.totalTaxAmount = totalTaxAmount
                     order.address = data.address
                     order.userId = User.id
                     order.orderType = data.orderType
                     order.storeId = data.storeId
                     order.isActive = 1
                     let createOrder = await Orders.create(Object.assign({}, order))
-                    CartItems && CartItems.forEach(async obj => {
+                    for (const obj of CartItems) {
                         orderItem.orderId = createOrder.id
                         orderItem.productId = obj.productId
                         orderItem.quantity = obj.quantity
@@ -213,14 +221,16 @@ export const createOrder = async (req, res) => {
                         orderItem.orderType = data.orderType
                         orderItem.gst = obj.product.gst
                         await OrderItems.create(Object.assign({}, orderItem))
-                        let findProducts = await Products.findOne({
-                            where: {
-                                id: obj.productId
-                            },
-                            attributes: ['id', 'name']
-                        })
+                        await Products.decrement('availableQuantity', { by: obj.quantity, where: { id: obj.productId } })
+                    }
+                    await cart.update({ isActive: 0 })
+                    await Payments.create({
+                        orderId: createOrder.id,
+                        payment_method: PAYMENT_METHOD.COD,
+                        payment_status: PAYMENT_STATUS.PENDING,
+                        transaction_reference: null,
+                        amount: totalAmount,
                     });
-                    await cart && cart.update({ isActive: 0 })
                     let vendorSubscriptionUrl = await VendorSubscriptionURL(2)
                     let CustomerToVendor = createOrder && createOrder.toJSON()
                     CustomerToVendor.type = "NEW_ORDER"
@@ -238,20 +248,55 @@ export const createOrder = async (req, res) => {
         res.status(500).json({ msg: error.message });
     }
 }
+/**
+ * Parse YYYY-MM-DD strings to start-of-day and end-of-day in local time.
+ * Returns { from: Date, to: Date } or null if invalid.
+ */
+function parseDateRange(fromDate, toDate) {
+    const strFrom = typeof fromDate === "string" ? fromDate.trim() : (fromDate && String(fromDate));
+    const strTo = typeof toDate === "string" ? toDate.trim() : (toDate && String(toDate));
+    if (!strFrom || !strTo) return null;
+    const matchFrom = /^(\d{4})-(\d{2})-(\d{2})$/.exec(strFrom);
+    const matchTo = /^(\d{4})-(\d{2})-(\d{2})$/.exec(strTo);
+    if (!matchFrom || !matchTo) return null;
+    const y1 = parseInt(matchFrom[1], 10), m1 = parseInt(matchFrom[2], 10) - 1, d1 = parseInt(matchFrom[3], 10);
+    const y2 = parseInt(matchTo[1], 10), m2 = parseInt(matchTo[2], 10) - 1, d2 = parseInt(matchTo[3], 10);
+    const from = new Date(y1, m1, d1, 0, 0, 0, 0);
+    const to = new Date(y2, m2, d2, 23, 59, 59, 999);
+    if (isNaN(from.getTime()) || isNaN(to.getTime())) return null;
+    if (from.getTime() > to.getTime()) return { from: to, to: from };
+    return { from, to };
+}
+
 export const getOrders = async (req, res) => {
-    const storeId = getStoreId(req)
-    const role = getRole(req)
     try {
-        let where = role === "vendor" ? {
-            storeId: storeId
-        } : {}
-        let response = await Orders.findAll({
+        const storeId = getStoreId(req);
+        const role = getRole(req);
+        const query = req.query || getRequestParser(req) || {};
+        const fromDate = query.fromDate ?? query.from;
+        const toDate = query.toDate ?? query.to;
+        const range = parseDateRange(fromDate, toDate);
+        if ((fromDate || toDate) && !range) {
+            return res.status(400).json({ msg: "Invalid date range. Use fromDate and toDate as YYYY-MM-DD." });
+        }
+        const where = {};
+        if (role === "vendor") {
+            if (storeId == null || storeId === "") {
+                return res.status(403).json({ msg: "Store not found. Please log in again." });
+            }
+            where.storeId = storeId;
+        }
+        if (range) {
+            where.createdAt = { [Op.between]: [range.from, range.to] };
+        }
+        const response = await Orders.findAll({
             where,
-            include: Users
+            include: [Users],
+            order: [["createdAt", "DESC"]]
         });
-        res.status(200).json(response);
+        return res.status(200).json(response);
     } catch (error) {
-        res.status(500).json({ msg: error.message });
+        return res.status(500).json({ msg: error.message });
     }
 }
 

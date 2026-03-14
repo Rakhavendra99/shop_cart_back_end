@@ -2,6 +2,8 @@ import { VendorSubscriptionURL } from "../config/Socket.js";
 import { EmitToSocketPost } from "../config/SocketPost.js";
 import Stores from "../models/StoreModel.js";
 import User from "../models/UserModel.js";
+import Vendor from "../models/VendorModel.js";
+import VendorType from "../models/VendorTypeModel.js";
 import argon2 from "argon2";
 
 export const Login = async (req, res) => {
@@ -36,7 +38,17 @@ export const Login = async (req, res) => {
     const id = user.id;
     const name = user.name;
     const email = user.email;
-    const role = user.role;
+    let role = user.role;
+    let vendorType = null;
+    if (user.role === "vendor") {
+        const vendor = await Vendor.findOne({
+            where: { userId: user.id },
+            include: [{ model: VendorType, attributes: ["code"] }]
+        });
+        if (vendor?.VendorType?.code === "cooking_vendor") {
+            vendorType = "cooking_vendor";
+        }
+    }
     let VendorSocketUrl = await VendorSubscriptionURL(id)
     let adminToVendor = user && user.toJSON();
     adminToVendor.type = "LOGIN_SUCCESS"
@@ -46,7 +58,9 @@ export const Login = async (req, res) => {
         response: adminToVendor
     }
     await EmitToSocketPost(VendorSocketResponse)
-    res.status(200).json({ id, name, email, role });
+    const response = { id, name, email, role };
+    if (vendorType) response.vendorType = vendorType;
+    res.status(200).json(response);
 }
 
 export const Me = async (req, res) => {
@@ -60,7 +74,17 @@ export const Me = async (req, res) => {
         }
     });
     if (!user) return res.status(404).json({ msg: "User Not found" });
-    res.status(200).json(user);
+    const result = user.toJSON ? user.toJSON() : { ...user };
+    if (user.role === "vendor") {
+        const vendor = await Vendor.findOne({
+            where: { userId: user.id },
+            include: [{ model: VendorType, attributes: ["code"] }]
+        });
+        if (vendor?.VendorType?.code === "cooking_vendor") {
+            result.vendorType = "cooking_vendor";
+        }
+    }
+    res.status(200).json(result);
 }
 
 export const logOut = (req, res) => {

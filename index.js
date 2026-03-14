@@ -10,9 +10,13 @@ import AuthRoute from "./routes/AuthRoute.js";
 import CategoryRoute from "./routes/CategoryRoute.js"
 import CartRoute from "./routes/CartRoute.js"
 import StoreRoute from "./routes/StoreRoute.js"
+import VendorRoute from "./routes/VendorRoute.js";
+import CookingRateRoute from "./routes/CookingRateRoute.js";
 import config from "./config/index.js";
 import portocal from 'http'
 import OrderRoute from './routes/OrderRoute.js'
+import PaymentRoute from './routes/PaymentRoute.js'
+import { handleStripeWebhook } from './controllers/StripeController.js'
 dotenv.config();
 const { port } = config;
 
@@ -25,7 +29,7 @@ const store = new sessionStore({
 });
 
 // (async()=>{
-//     await db.sync();
+//     await db.sync({ alter: true });
 // })();
 
 app.use(session({
@@ -39,9 +43,13 @@ app.use(session({
 }));
 
 app.use(cors({
-    credentials: true,
-    origin: 'http://localhost:3000'
+  credentials: true,
+  origin: true
 }));
+
+// Stripe webhook needs raw body for signature verification - must be before express.json()
+app.use('/payment/stripe/webhook', express.raw({ type: 'application/json' }), handleStripeWebhook);
+
 app.use(express.json());
 app.use(UserRoute);
 app.use(ProductRoute);
@@ -49,7 +57,10 @@ app.use(AuthRoute);
 app.use(CategoryRoute);
 app.use(CartRoute);
 app.use(StoreRoute);
+app.use(VendorRoute);
+app.use(CookingRateRoute);
 app.use(OrderRoute);
+app.use('/payment', PaymentRoute);
 
 const HttpServer = portocal.createServer(app);
 
