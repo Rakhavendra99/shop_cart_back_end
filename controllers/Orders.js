@@ -163,9 +163,6 @@ export const createOrder = async (req, res) => {
                 order.userId = createUser.id
                 order.orderType = data.orderType
                 order.storeId = data.storeId
-                if (data.cookingVendorId) {
-                    order.cookingVendorId = data.cookingVendorId;
-                }
                 order.isActive = 1
                 let createOrder = await Orders.create(Object.assign({}, order))
                 for (const obj of CartItems) {
@@ -214,9 +211,6 @@ export const createOrder = async (req, res) => {
                     order.userId = User.id
                     order.orderType = data.orderType
                     order.storeId = data.storeId
-                    if (data.cookingVendorId) {
-                        order.cookingVendorId = data.cookingVendorId;
-                    }
                     order.isActive = 1
                     let createOrder = await Orders.create(Object.assign({}, order))
                     for (const obj of CartItems) {

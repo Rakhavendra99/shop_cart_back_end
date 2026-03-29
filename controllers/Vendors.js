@@ -83,45 +83,6 @@ export const getVendors = async (req, res) => {
     }
 };
 
-// Public list for customers to choose a cooking vendor partner
-export const getCookingVendorsForCustomer = async (req, res) => {
-    try {
-        const COOKING_VENDOR_CODE = "cooking_vendor";
-        const vendors = await Vendor.findAll({
-            where: { isActive: 1 },
-            include: [
-                {
-                    model: VendorType,
-                    where: { code: COOKING_VENDOR_CODE, isActive: 1 },
-                },
-                {
-                    model: User,
-                    attributes: ["id", "name", "email", "isActive"],
-                },
-                {
-                    model: CookingRate,
-                    where: { isActive: 1 },
-                    required: false,
-                },
-            ],
-        });
-        const response = vendors.map((v) => {
-            const obj = v.toJSON ? v.toJSON() : { ...v };
-            return {
-                id: obj.id,
-                name: obj.name,
-                location: obj.location,
-                availableTimeSlots: obj.availableTimeSlots,
-                user: obj.User || obj.user || null,
-                rate: obj.CookingRate || obj.cooking_rate || null,
-            };
-        });
-        res.status(200).json(response);
-    } catch (error) {
-        res.status(500).json({ msg: error.message });
-    }
-};
-
 export const getVendorById = async (req, res) => {
     const params = getParamsParser(req);
     try {
