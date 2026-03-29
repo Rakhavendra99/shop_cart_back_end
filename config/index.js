@@ -18,10 +18,6 @@ function value() {
                 limit: 100,
                 offset: 0,
                 isShowOTP: 0,
-                stripe: {
-                    secretKey: "",
-                    webhookSecret: ""
-                }
             };
         case 'local':
             return {
@@ -36,10 +32,6 @@ function value() {
                 limit: 100,
                 offset: 0,
                 isShowOTP: 0,
-                stripe: {
-                    secretKey: "",
-                    webhookSecret: ""
-                }
             };
         case 'production':
             return {
@@ -54,10 +46,6 @@ function value() {
                 limit: 100,
                 offset: 0,
                 isShowOTP: 0,
-                stripe: {
-                    secretKey: "",
-                    webhookSecret: ""
-                }
             };
         default:
             return {
@@ -72,10 +60,6 @@ function value() {
                 limit: 100,
                 offset: 0,
                 isShowOTP: 0,
-                stripe: {
-                    secretKey: "",
-                    webhookSecret: ""
-                }
             };
     }
 };
