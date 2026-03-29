@@ -34,6 +34,22 @@ const Orders = db.define('orders', {
         type: DataTypes.INTEGER,
         allowNull: true,
     },
+    cookingWorkflowStatus: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+    },
+    cookingStartedAt: {
+        type: DataTypes.DATE,
+        allowNull: true,
+    },
+    cookingCompletedAt: {
+        type: DataTypes.DATE,
+        allowNull: true,
+    },
+    cookingServiceFee: {
+        type: DataTypes.DOUBLE,
+        allowNull: true,
+    },
     status: {
         type: DataTypes.INTEGER,
         allowNull: false,
@@ -84,7 +100,8 @@ const Orders = db.define('orders', {
         }
     },
 }, {
-    freezeTableName: true
+    freezeTableName: true,
+    tableName: "orders",
 });
 
 Users.hasOne(Orders);

@@ -19,36 +19,42 @@ export const Login = async (req, res) => {
     if (!match) return res.status(400).json({ msg: "Wrong Password" });
     req.session.userId = user.id;
     req.session.role = user.role;
+    let vendorProfile = null;
+    let vendorType = null;
     if (user.role === "vendor") {
-        let findStore = await Stores.findOne({
-            where: {
-                vendorId: user.id
-            }
-        })
-        if (!findStore) return res.status(404).json({ msg: "Store Not Config this email, Please contact administrator." });
-        let findStoreActive = await Stores.findOne({
-            where: {
-                vendorId: user.id,
-                isActive: 1
-            }
-        })
-        if (!findStoreActive) return res.status(404).json({ msg: "Your Store Disabled by Admin, Please contact administrator." });
-        req.session.storeId = findStore.id
+        vendorProfile = await Vendor.findOne({
+            where: { userId: user.id },
+        });
+        let cookingTypeCode = null;
+        if (vendorProfile) {
+            const t = await VendorType.findByPk(vendorProfile.vendorTypeId, { attributes: ["code"] });
+            cookingTypeCode = t?.code || null;
+        }
+        const isCookingVendor = cookingTypeCode === "cooking_vendor";
+        if (isCookingVendor) {
+            vendorType = "cooking_vendor";
+        }
+        if (!isCookingVendor) {
+            let findStore = await Stores.findOne({
+                where: {
+                    vendorId: user.id
+                }
+            });
+            if (!findStore) return res.status(404).json({ msg: "Store Not Config this email, Please contact administrator." });
+            let findStoreActive = await Stores.findOne({
+                where: {
+                    vendorId: user.id,
+                    isActive: 1
+                }
+            });
+            if (!findStoreActive) return res.status(404).json({ msg: "Your Store Disabled by Admin, Please contact administrator." });
+            req.session.storeId = findStore.id;
+        }
     }
     const id = user.id;
     const name = user.name;
     const email = user.email;
     let role = user.role;
-    let vendorType = null;
-    if (user.role === "vendor") {
-        const vendor = await Vendor.findOne({
-            where: { userId: user.id },
-            include: [{ model: VendorType, attributes: ["code"] }]
-        });
-        if (vendor?.VendorType?.code === "cooking_vendor") {
-            vendorType = "cooking_vendor";
-        }
-    }
     let VendorSocketUrl = await VendorSubscriptionURL(id)
     let adminToVendor = user && user.toJSON();
     adminToVendor.type = "LOGIN_SUCCESS"
@@ -76,12 +82,12 @@ export const Me = async (req, res) => {
     if (!user) return res.status(404).json({ msg: "User Not found" });
     const result = user.toJSON ? user.toJSON() : { ...user };
     if (user.role === "vendor") {
-        const vendor = await Vendor.findOne({
-            where: { userId: user.id },
-            include: [{ model: VendorType, attributes: ["code"] }]
-        });
-        if (vendor?.VendorType?.code === "cooking_vendor") {
-            result.vendorType = "cooking_vendor";
+        const vendor = await Vendor.findOne({ where: { userId: user.id } });
+        if (vendor) {
+            const t = await VendorType.findByPk(vendor.vendorTypeId, { attributes: ["code"] });
+            if (t?.code === "cooking_vendor") {
+                result.vendorType = "cooking_vendor";
+            }
         }
     }
     res.status(200).json(result);

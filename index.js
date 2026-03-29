@@ -22,24 +22,41 @@ const { port } = config;
 
 const app = express();
 
+// Behind HTTPS reverse proxy / dev tunnel: required so secure cookies and req.secure work.
+if (process.env.TRUST_PROXY === "1" || process.env.TRUST_PROXY === "true") {
+    app.set("trust proxy", 1);
+}
+
 const sessionStore = SequelizeStore(session.Store);
 
 const store = new sessionStore({
-    db: db
+    db: db,
+    // DB schema uses lowercase `sessions`; default package table is `Sessions` (breaks on Linux MySQL).
+    tableName: "sessions",
 });
 
 // (async()=>{
 //     await db.sync({ alter: true });
 // })();
 
+// Cross-origin UI (e.g. localhost:3000) + API on another host needs SameSite=None; Secure (see .env).
+const rawSameSite = (process.env.SESSION_SAME_SITE || "lax").toLowerCase();
+const sameSiteCookie =
+    rawSameSite === "none" ? "none" : rawSameSite === "strict" ? "strict" : "lax";
+const sessionCookieSecure =
+    sameSiteCookie === "none" ? true : "auto";
+
 app.use(session({
-    secret: "123456789",
+    secret: process.env.SESSION_SECRET || "123456789",
     resave: false,
     saveUninitialized: true,
     store: store,
     cookie: {
-        secure: 'auto'
-    }
+        secure: sessionCookieSecure,
+        sameSite: sameSiteCookie,
+        httpOnly: true,
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+    },
 }));
 
 app.use(cors({

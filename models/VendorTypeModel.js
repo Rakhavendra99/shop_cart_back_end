@@ -39,7 +39,8 @@ const VendorType = db.define("vendor_type", {
         }
     }
 }, {
-    freezeTableName: true
+    freezeTableName: true,
+    tableName: "vendor_type",
 });
 
 export default VendorType;

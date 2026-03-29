@@ -94,7 +94,8 @@ const Stores = db.define('store', {
         }
     }
 }, {
-    freezeTableName: true
+    freezeTableName: true,
+    tableName: "store",
 });
 // Users.hasOne(Stores);
 // Stores.belongsTo(Users, { foreignKey: 'vendorId' });

@@ -5,6 +5,7 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
+    "seed:cooking-vendor": "node ./scripts/seedCookingVendorSuba.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "start:local": "set NODE_ENV=local&&node index.js",
     "start:dev": "set NODE_ENV=develop&&node index.js",

@@ -46,6 +46,10 @@ const Vendor = db.define("vendor", {
         type: DataTypes.TEXT,
         allowNull: true
     },
+    cookingDescription: {
+        type: DataTypes.TEXT,
+        allowNull: true
+    },
     isActive: {
         type: DataTypes.INTEGER,
         allowNull: false,
@@ -55,7 +59,8 @@ const Vendor = db.define("vendor", {
         }
     }
 }, {
-    freezeTableName: true
+    freezeTableName: true,
+    tableName: "vendor",
 });
 
 Users.hasOne(Vendor);

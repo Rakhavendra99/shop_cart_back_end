@@ -112,6 +112,7 @@ export const getCookingVendorsForCustomer = async (req, res) => {
                 name: obj.name,
                 location: obj.location,
                 availableTimeSlots: obj.availableTimeSlots,
+                cookingDescription: obj.cookingDescription || null,
                 user: obj.User || obj.user || null,
                 rate: obj.CookingRate || obj.cooking_rate || null,
             };
@@ -150,6 +151,7 @@ export const createVendor = async (req, res) => {
         vendorTypeId,
         location,
         availableTimeSlots,
+        cookingDescription,
         rateType,
         rateAmount,
         currency
@@ -187,6 +189,7 @@ export const createVendor = async (req, res) => {
             name,
             location: location || null,
             availableTimeSlots: availableTimeSlots || null,
+            cookingDescription: cookingDescription || null,
             isActive: 1
         });
         if (rateType && rateAmount) {

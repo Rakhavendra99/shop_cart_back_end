@@ -65,9 +65,9 @@ function dbconfig() {
             return {
                 sql: {
                     host: "localhost",
-                    database: "shop_cart",
+                    database: "shop",
                     username: "root",
-                    password: "root",
+                    password: "Proglint@1",
                     dialect: "mysql",
                     logging: true,
                     maxConcurrentQueries: 1000,

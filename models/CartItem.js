@@ -37,8 +37,9 @@ const CartItem = db.define('cart_item',{
             notEmpty: true
         }
     }
-},{
-    freezeTableName: true
+}, {
+    freezeTableName: true,
+    tableName: "cart_item",
 });
 Cart.hasMany(CartItem);
 CartItem.belongsTo(Cart, { foreignKey: 'cartId' });

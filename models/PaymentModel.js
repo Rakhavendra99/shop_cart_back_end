@@ -37,9 +37,10 @@ const Payments = db.define('payments', {
     }
 }, {
     freezeTableName: true,
+    tableName: "payments",
     timestamps: true,
-    createdAt: 'created_at',
-    updatedAt: 'updated_at'
+    createdAt: "created_at",
+    updatedAt: "updated_at",
 });
 
 Orders.hasOne(Payments);

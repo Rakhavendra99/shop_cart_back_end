@@ -49,7 +49,8 @@ const CookingRate = db.define("cooking_rate", {
         }
     }
 }, {
-    freezeTableName: true
+    freezeTableName: true,
+    tableName: "cooking_rate",
 });
 
 Vendor.hasOne(CookingRate);

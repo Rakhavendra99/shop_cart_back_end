@@ -4,15 +4,9 @@ import CartItem from "../models/CartItem.js";
 import Product from "../models/ProductModel.js";
 import Stores from "../models/StoreModel.js";
 import Users from "../models/UserModel.js";
-import Orders from "../models/OrderModel.js";
-import OrderItems from "../models/OrderItems.js";
-import Payments from "../models/PaymentModel.js";
-import Products from "../models/ProductModel.js";
-import { OrderStatus } from "../util/index.js";
-import { VendorSubscriptionURL } from "../config/Socket.js";
-import { EmitToSocketPost } from "../config/SocketPost.js";
-import { calculateTotalTax, calculateTotalAmountExcludingTax } from "./Orders.js";
+import { calculateTotalTax, calculateTotalAmountExcludingTax, finalizeCheckoutOrder } from "./Orders.js";
 import { isStoreOpen } from "../util/storeHelpers.js";
+import { resolveCookingServiceFee } from "../util/cookingOrderHelpers.js";
 import config from "../config/index.js";
 
 const stripeSecret = config.stripe?.secretKey || process.env.STRIPE_SECRET_KEY;
@@ -21,22 +15,11 @@ const webhookSecretFromConfig = config.stripe?.webhookSecret || process.env.STRI
 const stripe = stripeSecret
   ? new Stripe(stripeSecret, { apiVersion: "2024-06-20" })
   : null;
-  
-const PAYMENT_STATUS = {
-    SUCCESS: "SUCCESS",
-    FAILED: "FAILED",
-    PENDING: "PENDING",
-    PAID: "PAID"
-};
-
-const PAYMENT_METHOD = {
-    STRIPE: "stripe",
-    COD: "cod"
-};
 
 /**
  * Create Stripe Payment Intent - used before redirecting user to Stripe Checkout
- * Order is NOT created here - only after webhook confirms payment
+ * Order is NOT created here - only after webhook confirms payment.
+ * Amount charged = products + tax only; cooking partner fee is paid later (COD or recorded by vendor).
  */
 export const createPaymentIntent = async (req, res) => {
     const data = req.body;
@@ -72,6 +55,8 @@ export const createPaymentIntent = async (req, res) => {
             return res.status(403).json({ msg: "Invalid amount for payment." });
         }
         const amountInCents = Math.round(totalAmount * 100);
+        const cv = data.cookingVendorId ? parseInt(String(data.cookingVendorId), 10) : null;
+        const cooking = await resolveCookingServiceFee(cv);
         const metadata = {
             cartId: String(data.cartId),
             storeId: String(data.storeId),
@@ -91,6 +76,8 @@ export const createPaymentIntent = async (req, res) => {
         return res.status(200).json({
             clientSecret: paymentIntent.client_secret,
             paymentIntentId: paymentIntent.id,
+            productTotal: totalAmount,
+            cookingServiceFee: cooking.cookingServiceFee ?? 0,
         });
     } catch (error) {
         console.error("Stripe createPaymentIntent error:", error);
@@ -143,9 +130,6 @@ export const handleStripeWebhook = async (req, res) => {
         if (!CartItems || CartItems.length === 0) {
             return res.status(200).json({ received: true });
         }
-        const totalTaxAmount = calculateTotalTax(CartItems);
-        const totalAmountExcludingTax = calculateTotalAmountExcludingTax(CartItems);
-        const totalAmount = totalAmountExcludingTax + totalTaxAmount;
         let getUser = await Users.findOne({
             where: {
                 phone: metadata.phone,
@@ -165,43 +149,19 @@ export const handleStripeWebhook = async (req, res) => {
         } else {
             userId = getUser.id;
         }
-        const order = {
-            status: OrderStatus.ORDER_INITIATE,
-            totalAmount,
-            totalTaxAmount,
-            address: metadata.address,
-            userId,
+        const data = {
+            address: metadata.address || "",
             orderType: parseInt(metadata.orderType || "1", 10),
             storeId: parseInt(storeId, 10),
             cookingVendorId: metadata.cookingVendorId ? parseInt(metadata.cookingVendorId, 10) : null,
-            isActive: 1,
         };
-        const createOrder = await Orders.create(order);
-        const orderItem = {};
-        for (const obj of CartItems) {
-            orderItem.orderId = createOrder.id;
-            orderItem.productId = obj.productId;
-            orderItem.quantity = obj.quantity;
-            orderItem.productPrice = obj.product.price;
-            orderItem.orderType = parseInt(metadata.orderType || "1", 10);
-            orderItem.gst = obj.product.gst;
-            await OrderItems.create({ ...orderItem });
-            await Products.decrement("availableQuantity", { by: obj.quantity, where: { id: obj.productId } });
-        }
-        await cart.update({ isActive: 0 });
-        await Payments.create({
-            orderId: createOrder.id,
-            payment_method: PAYMENT_METHOD.STRIPE,
-            payment_status: PAYMENT_STATUS.SUCCESS,
-            transaction_reference: paymentIntent.id,
-            amount: totalAmount,
-        });
-        const vendorSubscriptionUrl = await VendorSubscriptionURL(2);
-        const CustomerToVendor = createOrder.toJSON();
-        CustomerToVendor.type = "NEW_ORDER";
-        await EmitToSocketPost({
-            url: vendorSubscriptionUrl,
-            response: CustomerToVendor,
+        await finalizeCheckoutOrder({
+            userId,
+            data,
+            CartItems,
+            cart,
+            productPaymentMethod: "stripe",
+            stripePaymentIntentId: paymentIntent.id,
         });
         return res.status(200).json({ received: true });
     } catch (error) {

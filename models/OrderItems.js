@@ -59,7 +59,9 @@ const OrderItems = db.define('orderItems', {
         }
     },
 }, {
-    freezeTableName: true
+    freezeTableName: true,
+    // MySQL dump uses lowercase `orderitems`; camelCase breaks on case-sensitive filesystems.
+    tableName: "orderitems",
 });
 
 Orders.hasMany(OrderItems);

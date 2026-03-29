@@ -38,7 +38,8 @@ const Cart = db.define('cart', {
         }
     }
 }, {
-    freezeTableName: true
+    freezeTableName: true,
+    tableName: "cart",
 });
 Users.hasOne(Cart);
 Cart.belongsTo(Users, { foreignKey: 'userId' });

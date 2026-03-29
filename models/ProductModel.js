@@ -82,7 +82,8 @@ const Products = db.define('product', {
         }
     },
 }, {
-    freezeTableName: true
+    freezeTableName: true,
+    tableName: "product",
 });
 
 Category.hasOne(Products);

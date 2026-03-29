@@ -44,7 +44,8 @@ const Category = db.define('category', {
         }
     }
 }, {
-    freezeTableName: true
+    freezeTableName: true,
+    tableName: "category",
 });
 
 

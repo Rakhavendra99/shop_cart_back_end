@@ -52,8 +52,9 @@ const Users = db.define('users',{
         type: DataTypes.INTEGER,
         allowNull: true,
     }
-},{
-    freezeTableName: true
+}, {
+    freezeTableName: true,
+    tableName: "users",
 });
 
 export default Users;
