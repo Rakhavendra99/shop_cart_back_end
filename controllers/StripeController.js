@@ -80,6 +80,7 @@ export const createPaymentIntent = async (req, res) => {
             phone: data.phone || "",
             address: data.address || "",
             orderType: String(data.orderType || 1),
+            cookingVendorId: data.cookingVendorId ? String(data.cookingVendorId) : "",
         };
         const paymentIntent = await stripe.paymentIntents.create({
             amount: amountInCents,
@@ -172,6 +173,7 @@ export const handleStripeWebhook = async (req, res) => {
             userId,
             orderType: parseInt(metadata.orderType || "1", 10),
             storeId: parseInt(storeId, 10),
+            cookingVendorId: metadata.cookingVendorId ? parseInt(metadata.cookingVendorId, 10) : null,
             isActive: 1,
         };
         const createOrder = await Orders.create(order);

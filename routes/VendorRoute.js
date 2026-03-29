@@ -8,7 +8,8 @@ import {
     getVendorById,
     createVendor,
     updateVendor,
-    deleteVendor
+    deleteVendor,
+    getCookingVendorsForCustomer,
 } from "../controllers/Vendors.js";
 import { verifyUser, adminOnly } from "../middleware/AuthUser.js";
 
@@ -24,6 +25,9 @@ router.get("/vendors/:id", verifyUser, adminOnly, getVendorById);
 router.post("/vendors", verifyUser, adminOnly, createVendor);
 router.patch("/vendors/:id", verifyUser, adminOnly, updateVendor);
 router.delete("/vendors/:id", verifyUser, adminOnly, deleteVendor);
+
+// Customer-facing endpoint to list active cooking vendors with rate
+router.get("/customer/cooking-vendors", getCookingVendorsForCustomer);
 
 export default router;
 

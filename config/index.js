@@ -18,10 +18,10 @@ function value() {
                 limit: 100,
                 offset: 0,
                 isShowOTP: 0,
-                // stripe: {
-                //     secretKey: "test",
-                //     webhookSecret: "whsec_YaojvuF7o3V4M7jnrVPt9EPmvJ3Y0K8Z"
-                // }
+                stripe: {
+                    secretKey: "sk_test_51TAlu40R590SWJCI3AZui5DaV8A7Lx2b61UEch4Y4VyqG9AI3YC9DRrSsNx11KDi7M3WYDKIO7QPx2qv8Sprvikn00mJakVpON",
+                    webhookSecret: "whsec_YaojvuF7o3V4M7jnrVPt9EPmvJ3Y0K8Z"
+                }
             };
         case 'local':
             return {
@@ -36,10 +36,10 @@ function value() {
                 limit: 100,
                 offset: 0,
                 isShowOTP: 0,
-                // stripe: {
-                //     secretKey: "test",
-                //     webhookSecret: "whsec_YaojvuF7o3V4M7jnrVPt9EPmvJ3Y0K8Z"
-                // }
+                stripe: {
+                    secretKey: "sk_test_51TAlu40R590SWJCI3AZui5DaV8A7Lx2b61UEch4Y4VyqG9AI3YC9DRrSsNx11KDi7M3WYDKIO7QPx2qv8Sprvikn00mJakVpON",
+                    webhookSecret: "whsec_YaojvuF7o3V4M7jnrVPt9EPmvJ3Y0K8Z"
+                }
             };
         case 'production':
             return {
@@ -54,10 +54,10 @@ function value() {
                 limit: 100,
                 offset: 0,
                 isShowOTP: 0,
-                // stripe: {
-                //     secretKey: "test",
-                //     webhookSecret: "whsec_YaojvuF7o3V4M7jnrVPt9EPmvJ3Y0K8Z"
-                // }
+                stripe: {
+                    secretKey: "sk_test_51TAlu40R590SWJCI3AZui5DaV8A7Lx2b61UEch4Y4VyqG9AI3YC9DRrSsNx11KDi7M3WYDKIO7QPx2qv8Sprvikn00mJakVpON",
+                    webhookSecret: "whsec_YaojvuF7o3V4M7jnrVPt9EPmvJ3Y0K8Z"
+                }
             };
         default:
             return {
@@ -72,10 +72,10 @@ function value() {
                 limit: 100,
                 offset: 0,
                 isShowOTP: 0,
-                // stripe: {
-                //     secretKey: "test",
-                //     webhookSecret: "whsec_YaojvuF7o3V4M7jnrVPt9EPmvJ3Y0K8Z"
-                // }
+                stripe: {
+                    secretKey: "sk_test_51TAlu40R590SWJCI3AZui5DaV8A7Lx2b61UEch4Y4VyqG9AI3YC9DRrSsNx11KDi7M3WYDKIO7QPx2qv8Sprvikn00mJakVpON",
+                    webhookSecret: "whsec_YaojvuF7o3V4M7jnrVPt9EPmvJ3Y0K8Z"
+                }
             };
     }
 };

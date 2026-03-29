@@ -29,6 +29,11 @@ const Orders = db.define('orders', {
             notEmpty: true,
         }
     },
+    // Optional: if customer chose a specific cooking vendor/partner for this order
+    cookingVendorId: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+    },
     status: {
         type: DataTypes.INTEGER,
         allowNull: false,
