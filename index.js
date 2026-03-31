@@ -17,6 +17,7 @@ import portocal from 'http'
 import OrderRoute from './routes/OrderRoute.js'
 import PaymentRoute from './routes/PaymentRoute.js'
 import { handleStripeWebhook } from './controllers/StripeController.js'
+import { bearerSessionFromJwt } from "./middleware/bearerSession.js";
 dotenv.config();
 const { port } = config;
 
@@ -39,30 +40,44 @@ const store = new sessionStore({
 //     await db.sync({ alter: true });
 // })();
 
-// Cross-origin UI (e.g. localhost:3000) + API on another host needs SameSite=None; Secure (see .env).
+// Cross-origin UI + HTTPS API: SESSION_SAME_SITE=none + Secure. Plain http://localhost API: use lax + insecure (see SESSION_COOKIE_INSECURE).
 const rawSameSite = (process.env.SESSION_SAME_SITE || "lax").toLowerCase();
 const sameSiteCookie =
     rawSameSite === "none" ? "none" : rawSameSite === "strict" ? "strict" : "lax";
-const sessionCookieSecure =
-    sameSiteCookie === "none" ? true : "auto";
+const allowInsecureCookies =
+    process.env.SESSION_COOKIE_INSECURE === "1" ||
+    process.env.SESSION_COOKIE_INSECURE === "true";
+let sessionCookieSecure;
+if (allowInsecureCookies && sameSiteCookie !== "none") {
+    sessionCookieSecure = false;
+} else if (sameSiteCookie === "none") {
+    sessionCookieSecure = true;
+} else {
+    sessionCookieSecure = "auto";
+}
 
 app.use(session({
     secret: process.env.SESSION_SECRET || "123456789",
     resave: false,
     saveUninitialized: true,
     store: store,
+    name: process.env.SESSION_COOKIE_NAME || "connect.sid",
     cookie: {
         secure: sessionCookieSecure,
         sameSite: sameSiteCookie,
         httpOnly: true,
         maxAge: 7 * 24 * 60 * 60 * 1000,
+        path: "/",
     },
 }));
 
 app.use(cors({
-  credentials: true,
-  origin: true
+    credentials: true,
+    origin: true,
+    allowedHeaders: ["Content-Type", "Authorization"],
 }));
+
+app.use(bearerSessionFromJwt);
 
 // Stripe webhook needs raw body for signature verification - must be before express.json()
 app.use('/payment/stripe/webhook', express.raw({ type: 'application/json' }), handleStripeWebhook);
